@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private 2-Person Chat</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .setup-container { text-align: center; background: #1e1e1e; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); width: 320px; }
+        .chat-container { width: 450px; background: #1e1e1e; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: none; flex-direction: column; height: 85vh; }
+        h2 { margin-bottom: 20px; color: #00adb5; }
+        input { background: #2d2d2d; color: white; border: 1px solid #3d3d3d; padding: 12px; border-radius: 6px; font-size: 14px; outline: none; }
+        .setup-container input { width: 90%; margin-bottom: 15px; text-align: center; }
+        button { background: #00adb5; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #008891; }
+        .messages { flex-grow: 1; overflow-y: auto; border: 1px solid #2d2d2d; padding: 15px; margin: 15px 0; border-radius: 6px; background: #151515; }
+        .msg { margin: 10px 0; padding: 10px 14px; border-radius: 8px; max-width: 70%; word-wrap: break-word; font-size: 15px; }
+        .sent { background: #00adb5; margin-left: auto; color: white; border-bottom-right-radius: 0; }
+        .received { background: #2d2d2d; color: white; border-bottom-left-radius: 0; }
+        .system { background: transparent; color: #777; font-size: 13px; text-align: center; max-width: 100%; width: 100%; font-style: italic; }
+        .input-area { display: flex; gap: 10px; }
+        .input-area input { flex-grow: 1; }
+        #room-title { margin: 0 0 10px 0; color: #00adb5; font-size: 18px; text-align: center; border-bottom: 1px solid #2d2d2d; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- Join Screen -->
+    <div class="setup-container" id="setup">
+        <h2>Private Chat</h2>
+        <input type="text" id="room-input" placeholder="Enter Secret Room ID...">
+        <br>
+        <button onclick="joinRoom()">Join Private Chat</button>
+    </div>
+
+    <!-- Chat Screen -->
+    <div class="chat-container" id="chat-box">
+        <div id="room-title">Room ID: </div>
+        <div class="messages" id="message-container"></div>
+        <div class="input-area">
+            <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <!-- Client-side Socket.io Library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let currentRoom = "";
+
+        function joinRoom() {
+            const roomId = document.getElementById('room-input').value.trim();
+            if (!roomId) return alert("Please enter a Room ID");
+
+            currentRoom = roomId;
+            socket.emit('join-room', roomId);
+        }
+
+        socket.on('room-status', (status) => {
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('chat-box').style.display = 'flex';
+            document.getElementById('room-title').innerText = `Room: ${currentRoom}`;
+            appendMessage('System', status, 'system');
+        });
+
+        socket.on('room-full', (msg) => {
+            alert(msg);
+        });
+
+        socket.on('message', (data) => {
+            const type = data.user === 'System' ? 'system' : 'received';
+            appendMessage(data.user, data.text, type);
+        });
+
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendMessage('You', text, 'sent');
+            socket.emit('chat-message', { user: 'Partner', text: text });
+            input.value = '';
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function appendMessage(user, text, type) {
+            const container = document.getElementById('message-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('msg', type);
+            msgDiv.innerText = type === 'system' ? text : text; // Display only text for regular chat
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>
