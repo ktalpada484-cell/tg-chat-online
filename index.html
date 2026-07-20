@@ -3,95 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private 2-Person Chat</title>
+    <title>Private Chat & Voice Call</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .setup-container { text-align: center; background: #1e1e1e; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); width: 320px; }
-        .chat-container { width: 450px; background: #1e1e1e; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: none; flex-direction: column; height: 85vh; }
-        h2 { margin-bottom: 20px; color: #00adb5; }
-        input { background: #2d2d2d; color: white; border: 1px solid #3d3d3d; padding: 12px; border-radius: 6px; font-size: 14px; outline: none; }
-        .setup-container input { width: 90%; margin-bottom: 15px; text-align: center; }
-        button { background: #00adb5; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #008891; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .chat-container { width: 450px; background: #1e1e1e; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; height: 85vh; }
+        #status-bar { color: #aaa; font-size: 15px; text-align: center; border-bottom: 1px solid #2d2d2d; padding-bottom: 10px; font-weight: bold; }
+        
+        /* Call UI Area */
+        .call-controls { display: flex; justify-content: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #2d2d2d; }
+        .btn { border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-call { background: #28a745; }
+        .btn-hangup { background: #dc3545; display: none; }
+        .btn-answer { background: #ffc107; color: black; display: none; }
+        
         .messages { flex-grow: 1; overflow-y: auto; border: 1px solid #2d2d2d; padding: 15px; margin: 15px 0; border-radius: 6px; background: #151515; }
-        .msg { margin: 10px 0; padding: 10px 14px; border-radius: 8px; max-width: 70%; word-wrap: break-word; font-size: 15px; }
-        .sent { background: #00adb5; margin-left: auto; color: white; border-bottom-right-radius: 0; }
-        .received { background: #2d2d2d; color: white; border-bottom-left-radius: 0; }
-        .system { background: transparent; color: #777; font-size: 13px; text-align: center; max-width: 100%; width: 100%; font-style: italic; }
+        .msg { margin: 10px 0; padding: 10px 14px; border-radius: 8px; max-width: 70%; word-wrap: break-word; }
+        .sent { background: #00adb5; margin-left: auto; border-bottom-right-radius: 0; }
+        .received { background: #2d2d2d; border-bottom-left-radius: 0; }
+        
         .input-area { display: flex; gap: 10px; }
-        .input-area input { flex-grow: 1; }
-        #room-title { margin: 0 0 10px 0; color: #00adb5; font-size: 18px; text-align: center; border-bottom: 1px solid #2d2d2d; padding-bottom: 10px; }
+        .input-area input { flex-grow: 1; background: #2d2d2d; color: white; border: 1px solid #3d3d3d; padding: 12px; border-radius: 6px; outline: none; }
     </style>
 </head>
 <body>
 
-    <!-- Join Screen -->
-    <div class="setup-container" id="setup">
-        <h2>Private Chat</h2>
-        <input type="text" id="room-input" placeholder="Enter Secret Room ID...">
-        <br>
-        <button onclick="joinRoom()">Join Private Chat</button>
-    </div>
+    <div class="chat-container">
+        <div id="status-bar">Connecting...</div>
+        
+        <!-- Voice Call UI -->
+        <div class="call-controls">
+            <button id="call-btn" class="btn btn-call" onclick="startCall()">📞 Call Partner</button>
+            <button id="answer-btn" class="btn btn-answer" onclick="answerCall()">📞 Answer</button>
+            <button id="hangup-btn" class="btn btn-hangup" onclick="endCall()">❌ Hang Up</button>
+        </div>
 
-    <!-- Chat Screen -->
-    <div class="chat-container" id="chat-box">
-        <div id="room-title">Room ID: </div>
         <div class="messages" id="message-container"></div>
+        
         <div class="input-area">
             <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendMessage()">Send</button>
+            <button class="btn" style="background: #00adb5;" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
-    <!-- Client-side Socket.io Library -->
+    <!-- Remote Audio Element (Hidden) -->
+    <audio id="remote-audio" autoplay></audio>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let currentRoom = "";
+        let localStream;
+        let peerConnection;
+        let incomingOffer;
 
-        function joinRoom() {
-            const roomId = document.getElementById('room-input').value.trim();
-            if (!roomId) return alert("Please enter a Room ID");
+        const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-            currentRoom = roomId;
-            socket.emit('join-room', roomId);
+        const callBtn = document.getElementById('call-btn');
+        const answerBtn = document.getElementById('answer-btn');
+        const hangupBtn = document.getElementById('hangup-btn');
+        const remoteAudio = document.getElementById('remote-audio');
+
+        socket.on('status-change', (status) => {
+            const statusBar = document.getElementById('status-bar');
+            statusBar.innerText = status.text;
+            statusBar.style.color = status.online ? "#00ffcc" : "#ff4a4a";
+        });
+
+        socket.on('message', (data) => appendMessage(data.text, 'received'));
+
+        // --- WebRTC Voice Call Logic ---
+
+        async function setupMedia() {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         }
 
-        socket.on('room-status', (status) => {
-            document.getElementById('setup').style.display = 'none';
-            document.getElementById('chat-box').style.display = 'flex';
-            document.getElementById('room-title').innerText = `Room: ${currentRoom}`;
-            appendMessage('System', status, 'system');
+        async function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            peerConnection.ontrack = (event) => {
+                remoteAudio.srcObject = event.streams[0];
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { candidate: event.candidate });
+                }
+            };
+        }
+
+        async function startCall() {
+            try {
+                await setupMedia();
+                await createPeerConnection();
+                
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                socket.emit('call-user', { offer: offer });
+                
+                callBtn.style.display = 'none';
+                hangupBtn.style.display = 'inline-block';
+                document.getElementById('status-bar').innerText = "Calling...";
+            } catch (err) {
+                alert("Microphone access denied or error occurred.");
+            }
+        }
+
+        socket.on('incoming-call', async (data) => {
+            incomingOffer = data.offer;
+            callBtn.style.display = 'none';
+            answerBtn.style.display = 'inline-block';
+            hangupBtn.style.display = 'inline-block';
+            document.getElementById('status-bar').innerText = "🔔 Incoming Call...";
         });
 
-        socket.on('room-full', (msg) => {
-            alert(msg);
+        async function answerCall() {
+            await setupMedia();
+            await createPeerConnection();
+            
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(incomingOffer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            
+            socket.emit('answer-call', { answer: answer });
+            
+            answerBtn.style.display = 'none';
+            document.getElementById('status-bar').innerText = "🗣️ On Call";
+        }
+
+        socket.on('call-answered', async (data) => {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            document.getElementById('status-bar').innerText = "🗣️ On Call";
         });
 
-        socket.on('message', (data) => {
-            const type = data.user === 'System' ? 'system' : 'received';
-            appendMessage(data.user, data.text, type);
+        socket.on('ice-candidate', async (candidate) => {
+            if (peerConnection) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            }
         });
 
+        function endCall() {
+            socket.emit('end-call');
+            resetCallUI();
+        }
+
+        socket.on('call-ended', () => {
+            resetCallUI();
+        });
+
+        function resetCallUI() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            callBtn.style.display = 'inline-block';
+            answerBtn.style.display = 'none';
+            hangupBtn.style.display = 'none';
+            document.getElementById('status-bar').innerText = "🟢 Partner is Online";
+        }
+
+        // --- Chat Text Logic ---
         function sendMessage() {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
             if (!text) return;
-
-            appendMessage('You', text, 'sent');
-            socket.emit('chat-message', { user: 'Partner', text: text });
+            appendMessage(text, 'sent');
+            socket.emit('chat-message', { text: text });
             input.value = '';
         }
 
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
+        function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
-        function appendMessage(user, text, type) {
+        function appendMessage(text, type) {
             const container = document.getElementById('message-container');
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('msg', type);
-            msgDiv.innerText = type === 'system' ? text : text; // Display only text for regular chat
+            msgDiv.innerText = text;
             container.appendChild(msgDiv);
             container.scrollTop = container.scrollHeight;
         }
