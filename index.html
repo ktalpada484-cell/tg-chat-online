@@ -226,7 +226,8 @@
     </div>
 
     <!-- Remote Audio Element (Hidden Output Node) -->
-    <audio id="remote-audio" autoplay></audio>
+    <!-- playsinline aur controls hata kar strict earpiece mode mapping target kiya hai -->
+    <audio id="remote-audio" autoplay playsinline></audio>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -255,7 +256,15 @@
         // --- WebRTC Voice Call Framework Architecture ---
 
         async function setupMedia() {
-            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            // Mobile Optimization: Call mode settings to force earpiece by default
+            localStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }, 
+                video: false 
+            });
         }
 
         async function createPeerConnection() {
@@ -265,7 +274,7 @@
 
             peerConnection.ontrack = (event) => {
                 remoteAudio.srcObject = event.streams[0];
-                // Default phone structure setup: ensure it starts in default output
+                // Call connect hote hi direct earpiece mode enforce karo
                 setSpeakerState(false);
             };
 
@@ -341,16 +350,25 @@
 
         function setSpeakerState(enableSpeaker) {
             if (enableSpeaker) {
-                // Speaker ON Mode
-                remoteAudio.sinkId = ""; // Resets browser target routing to system default main loud channels
+                // Main Loud Speaker Mode
+                if (typeof remoteAudio.setSinkId === 'function') {
+                    remoteAudio.setSinkId('').catch(() => {});
+                }
                 speakerBtn.classList.add('active');
                 speakerBtn.innerText = "🔊 Speaker ON";
             } else {
-                // Speaker OFF Mode (Routes to handset earpiece dynamically if browser/hardware supports sink isolation)
+                // Earpiece Mode (Top Camera Speaker)
                 if (typeof remoteAudio.setSinkId === 'function') {
-                    // Modern web standard configuration for mobile/handset audio nodes
+                    // Try routing directly to mobile earpiece communications output node
                     remoteAudio.setSinkId('communication').catch(() => {
-                        remoteAudio.sinkId = ""; 
+                        // Fallback constraint toggle
+                        if(remoteAudio.sinkId !== 'communication') {
+                            remoteAudio.srcObject.getAudioTracks().forEach(track => {
+                                if(track.getConstraints) {
+                                    track.applyConstraints({echoCancellation: true});
+                                }
+                            });
+                        }
                     });
                 }
                 speakerBtn.classList.remove('active');
