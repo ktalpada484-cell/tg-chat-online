@@ -13,57 +13,62 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rooms ka data store karne ke liye
-const rooms = {}; 
+const PRIVATE_ROOM = "our_hidden_space_2011";
+const rooms = { [PRIVATE_ROOM]: [] }; 
 
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    // Room join karne ka logic
-    socket.on('join-room', (roomId) => {
-        if (!rooms[roomId]) {
-            rooms[roomId] = [];
-        }
-
-        // Room mein max 2 log allow hain
-        if (rooms[roomId].length < 2) {
-            rooms[roomId].push(socket.id);
-            socket.join(roomId);
-            socket.currentRoom = roomId;
-            
-            socket.emit('room-status', 'Connected to private chat.');
-            socket.to(roomId).emit('message', { user: 'System', text: 'Partner joined the chat.' });
+    if (rooms[PRIVATE_ROOM].length < 2) {
+        rooms[PRIVATE_ROOM].push(socket.id);
+        socket.join(PRIVATE_ROOM);
+        socket.currentRoom = PRIVATE_ROOM;
+        
+        if (rooms[PRIVATE_ROOM].length === 2) {
+            io.to(PRIVATE_ROOM).emit('status-change', { online: true, text: '🟢 Partner is Online' });
         } else {
-            // Agar 2 log pehle se hain
-            socket.emit('room-full', 'This room is full! Only 2 people allowed.');
+            socket.emit('status-change', { online: false, text: '🔴 Waiting for partner...' });
         }
-    });
+    } else {
+        socket.emit('room-full', 'This private chat is full!');
+    }
 
-    // Message transmit karne ka logic
+    // Text Message
     socket.on('chat-message', (data) => {
         if (socket.currentRoom) {
             socket.to(socket.currentRoom).emit('message', data);
         }
     });
 
-    // Disconnect hone par clear-up
+    // WebRTC Signaling Logic (Voice Call ke liye)
+    socket.on('call-user', (data) => {
+        socket.to(PRIVATE_ROOM).emit('incoming-call', { from: socket.id, offer: data.offer });
+    });
+
+    socket.on('answer-call', (data) => {
+        socket.to(PRIVATE_ROOM).emit('call-answered', { answer: data.answer });
+    });
+
+    socket.on('ice-candidate', (data) => {
+        socket.to(PRIVATE_ROOM).emit('ice-candidate', data.candidate);
+    });
+
+    socket.on('end-call', () => {
+        socket.to(PRIVATE_ROOM).emit('call-ended');
+    });
+
+    // Disconnect
     socket.on('disconnect', () => {
-        const roomId = socket.currentRoom;
-        if (roomId && rooms[roomId]) {
-            rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
-            if (rooms[roomId].length === 0) {
-                delete rooms[roomId];
-            } else {
-                socket.to(roomId).emit('message', { user: 'System', text: 'Partner left the chat.' });
-            }
+        if (rooms[PRIVATE_ROOM]) {
+            rooms[PRIVATE_ROOM] = rooms[PRIVATE_ROOM].filter(id => id !== socket.id);
+            socket.to(PRIVATE_ROOM).emit('status-change', { online: false, text: '🔴 Partner went Offline' });
+            socket.to(PRIVATE_ROOM).emit('call-ended');
         }
         console.log('User disconnected:', socket.id);
     });
 });
 
-// Render dynamic port supply karta hai, isliye process.env.PORT zaroori hai
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
