@@ -98,6 +98,17 @@
             transform: translateY(-2px);
         }
         
+        /* Speaker Button Toggle Styling */
+        .btn-speaker {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            display: none;
+        }
+        .btn-speaker.active {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #000;
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.6);
+        }
+        
         /* Neon Blink Animation for Incoming Call */
         .btn-answer { 
             background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); 
@@ -200,6 +211,7 @@
         <div class="call-controls">
             <button id="call-btn" class="btn btn-call" onclick="startCall()">📞 Call Partner</button>
             <button id="answer-btn" class="btn btn-answer" onclick="answerCall()">📞 Answer Call</button>
+            <button id="speaker-btn" class="btn btn-speaker" onclick="toggleSpeaker()">📢 Speaker</button>
             <button id="hangup-btn" class="btn btn-hangup" onclick="endCall()">❌ Hang Up</button>
         </div>
 
@@ -222,12 +234,14 @@
         let localStream;
         let peerConnection;
         let incomingOffer;
+        let isSpeakerOn = false;
 
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
         const callBtn = document.getElementById('call-btn');
         const answerBtn = document.getElementById('answer-btn');
         const hangupBtn = document.getElementById('hangup-btn');
+        const speakerBtn = document.getElementById('speaker-btn');
         const remoteAudio = document.getElementById('remote-audio');
 
         socket.on('status-change', (status) => {
@@ -251,6 +265,8 @@
 
             peerConnection.ontrack = (event) => {
                 remoteAudio.srcObject = event.streams[0];
+                // Default phone structure setup: ensure it starts in default output
+                setSpeakerState(false);
             };
 
             peerConnection.onicecandidate = (event) => {
@@ -272,6 +288,7 @@
                 
                 callBtn.style.display = 'none';
                 hangupBtn.style.display = 'inline-block';
+                speakerBtn.style.display = 'inline-block';
                 document.getElementById('status-bar').innerText = "Calling Partner...";
                 document.getElementById('status-bar').style.color = "#ffc107";
             } catch (err) {
@@ -299,6 +316,7 @@
             socket.emit('answer-call', { answer: answer });
             
             answerBtn.style.display = 'none';
+            speakerBtn.style.display = 'inline-block';
             document.getElementById('status-bar').innerText = "🗣️ On Secure Call";
             document.getElementById('status-bar').style.color = "#00ffcc";
         }
@@ -314,6 +332,31 @@
                 await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
             }
         });
+
+        // --- Speaker Control Engine ---
+        function toggleSpeaker() {
+            isSpeakerOn = !isSpeakerOn;
+            setSpeakerState(isSpeakerOn);
+        }
+
+        function setSpeakerState(enableSpeaker) {
+            if (enableSpeaker) {
+                // Speaker ON Mode
+                remoteAudio.sinkId = ""; // Resets browser target routing to system default main loud channels
+                speakerBtn.classList.add('active');
+                speakerBtn.innerText = "🔊 Speaker ON";
+            } else {
+                // Speaker OFF Mode (Routes to handset earpiece dynamically if browser/hardware supports sink isolation)
+                if (typeof remoteAudio.setSinkId === 'function') {
+                    // Modern web standard configuration for mobile/handset audio nodes
+                    remoteAudio.setSinkId('communication').catch(() => {
+                        remoteAudio.sinkId = ""; 
+                    });
+                }
+                speakerBtn.classList.remove('active');
+                speakerBtn.innerText = "📢 Speaker OFF";
+            }
+        }
 
         function endCall() {
             socket.emit('end-call');
@@ -332,9 +375,12 @@
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
+            isSpeakerOn = false;
             callBtn.style.display = 'inline-block';
             answerBtn.style.display = 'none';
             hangupBtn.style.display = 'none';
+            speakerBtn.style.display = 'none';
+            speakerBtn.classList.remove('active');
             document.getElementById('status-bar').innerText = "🟢 Partner is Online";
             document.getElementById('status-bar').style.color = "#00ffcc";
         }
@@ -362,4 +408,3 @@
     </script>
 </body>
 </html>
-
