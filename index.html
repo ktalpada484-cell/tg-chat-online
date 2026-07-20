@@ -177,8 +177,8 @@
         </div>
     </div>
 
-    <!-- Hidden standard element mapped with explicit attributes for non-intrusive stream injection -->
-    <audio id="remote-audio" autoplay playsinline style="display:none;"></audio>
+    <!-- Playsinline lagakar ios/android browser media player standard ko hit kiya -->
+    <audio id="remote-audio" autoplay playsinline></audio>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -187,7 +187,9 @@
         let peerConnection;
         let incomingOffer;
         let isSpeakerOn = false;
-        let audioCtx, mediaStreamSource, remoteAudioNode;
+        
+        // Web Audio components for hardware level control
+        let audioCtx, gainNode;
 
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
@@ -218,30 +220,27 @@
 
         async function createPeerConnection() {
             peerConnection = new RTCPeerConnection(rtcConfig);
+            
+            // Audio streams explicitly register 
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
             peerConnection.ontrack = (event) => {
                 const stream = event.streams[0];
                 remoteAudio.srcObject = stream;
                 
-                // Audio Architecture Optimization for Earpiece Output Enforcing
+                // Native Web Audio API Injection to control volume routing node
                 try {
-                    if (!audioCtx) {
-                        // Creating Web Audio Instance targeting Telephone Output modes
-                        audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
-                    }
-                    if (audioCtx.state === 'suspended') {
-                        audioCtx.resume();
-                    }
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioCtx.createMediaStreamSource(stream);
+                    gainNode = audioCtx.createGain();
                     
-                    mediaStreamSource = audioCtx.createMediaStreamSource(stream);
-                    remoteAudioNode = audioCtx.destination;
-                    mediaStreamSource.connect(remoteAudioNode);
+                    source.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
                     
-                    // Standard Initial Output State Routing Force
+                    // Direct forced startup in deep hardware earpiece configuration
                     setSpeakerState(false);
-                } catch(e) {
-                    console.log("Audio routing engine fallback triggered.");
+                } catch (e) {
+                    console.error("Audio Engine Router bypass failed, using fallback layers.");
                 }
             };
 
@@ -268,7 +267,7 @@
                 document.getElementById('status-bar').innerText = "Calling Partner...";
                 document.getElementById('status-bar').style.color = "#ffc107";
             } catch (err) {
-                alert("Microphone configuration or hardware access error.");
+                alert("Microphone access initialization failed.");
             }
         }
 
@@ -309,7 +308,6 @@
             }
         });
 
-        // --- Standard Core Speaker Toggling Node ---
         function toggleSpeaker() {
             isSpeakerOn = !isSpeakerOn;
             setSpeakerState(isSpeakerOn);
@@ -317,23 +315,27 @@
 
         function setSpeakerState(enableSpeaker) {
             if (enableSpeaker) {
-                // Speaker Phone Mode (System standard routing)
-                if (typeof remoteAudio.setSinkId === 'function') {
-                    remoteAudio.setSinkId('').catch(() => {});
-                }
+                // SPEAKER ON MODE: Sound routes to main loud systems max out
+                if (gainNode) gainNode.gain.value = 3.5; 
                 remoteAudio.volume = 1.0;
+                
+                if (typeof remoteAudio.setSinkId === 'function') {
+                    remoteAudio.setSinkId('').catch(()=>{});
+                }
+                
                 speakerBtn.classList.add('active');
                 speakerBtn.innerText = "🔊 Speaker ON";
             } else {
-                // Camera Earpiece Mode Enforcing
+                // SPEAKER OFF (EARPIECE MODE): Drop volume tightly to sound only from top speaker when close to ear
+                if (gainNode) gainNode.gain.value = 0.25; 
+                remoteAudio.volume = 0.15;
+                
                 if (typeof remoteAudio.setSinkId === 'function') {
-                    // Injecting standard communication profile string parameters
                     remoteAudio.setSinkId('communication').catch(() => {
-                        remoteAudio.setSinkId('earpiece').catch(() => {});
+                        remoteAudio.setSinkId('earpiece').catch(()=>{});
                     });
                 }
-                // Attenuate stream context constraints slightly to shift hardware audio layers
-                remoteAudio.volume = 0.35; 
+                
                 speakerBtn.classList.remove('active');
                 speakerBtn.innerText = "📢 Speaker OFF";
             }
@@ -356,7 +358,7 @@
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
-            if(audioCtx) {
+            if (audioCtx) {
                 audioCtx.close();
                 audioCtx = null;
             }
