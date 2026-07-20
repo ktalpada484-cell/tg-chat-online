@@ -5,47 +5,215 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Private Chat & Voice Call</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .chat-container { width: 450px; background: #1e1e1e; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; height: 85vh; }
-        #status-bar { color: #aaa; font-size: 15px; text-align: center; border-bottom: 1px solid #2d2d2d; padding-bottom: 10px; font-weight: bold; }
+        /* Dark Aesthetic Background with Animated Gradient Border Effect */
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%); 
+            color: #fff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Modern Glassmorphic Container */
+        .chat-container { 
+            width: 450px; 
+            background: rgba(30, 30, 30, 0.75); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px; 
+            padding: 24px; 
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4); 
+            display: flex; 
+            flex-direction: column; 
+            height: 82vh; 
+            transition: all 0.4s ease;
+        }
+
+        /* Pulsating Status Bar for Online/Offline Notifications */
+        #status-bar { 
+            color: #aaa; 
+            font-size: 14px; 
+            text-align: center; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            padding-bottom: 14px; 
+            font-weight: 600; 
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            animation: pulseStatus 2s infinite alternate;
+        }
+
+        @keyframes pulseStatus {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; text-shadow: 0 0 8px rgba(255,255,255,0.2); }
+        }
         
-        /* Call UI Area */
-        .call-controls { display: flex; justify-content: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #2d2d2d; }
-        .btn { border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
-        .btn-call { background: #28a745; }
-        .btn-hangup { background: #dc3545; display: none; }
-        .btn-answer { background: #ffc107; color: black; display: none; }
+        /* Premium Call UI Controls */
+        .call-controls { 
+            display: flex; 
+            justify-content: center; 
+            gap: 12px; 
+            padding: 12px 0; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+        }
         
-        .messages { flex-grow: 1; overflow-y: auto; border: 1px solid #2d2d2d; padding: 15px; margin: 15px 0; border-radius: 6px; background: #151515; }
-        .msg { margin: 10px 0; padding: 10px 14px; border-radius: 8px; max-width: 70%; word-wrap: break-word; }
-        .sent { background: #00adb5; margin-left: auto; border-bottom-right-radius: 0; }
-        .received { background: #2d2d2d; border-bottom-left-radius: 0; }
+        /* Universal Button Styling with Hover Scale Animations */
+        .btn { 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            color: white; 
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
         
-        .input-area { display: flex; gap: 10px; }
-        .input-area input { flex-grow: 1; background: #2d2d2d; color: white; border: 1px solid #3d3d3d; padding: 12px; border-radius: 6px; outline: none; }
+        .btn-call { 
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); 
+        }
+        .btn-call:hover {
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        .btn-hangup { 
+            background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%); 
+            display: none; 
+        }
+        .btn-hangup:hover {
+            box-shadow: 0 0 15px rgba(220, 53, 69, 0.5);
+            transform: translateY(-2px);
+        }
+        
+        /* Neon Blink Animation for Incoming Call */
+        .btn-answer { 
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); 
+            color: black; 
+            display: none; 
+            animation: blinkAnswer 1s infinite alternate;
+        }
+
+        @keyframes blinkAnswer {
+            0% { box-shadow: 0 0 4px rgba(255, 193, 7, 0.4); }
+            100% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.8); transform: scale(1.03); }
+        }
+        
+        /* Chat Box Area with Smooth Scroll */
+        .messages { 
+            flex-grow: 1; 
+            overflow-y: auto; 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            padding: 16px; 
+            margin: 16px 0; 
+            border-radius: 16px; 
+            background: rgba(15, 15, 26, 0.5); 
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollbar Customization */
+        .messages::-webkit-scrollbar {
+            width: 5px;
+        }
+        .messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        /* Smooth Pop-in Animation for Chat Bubbles */
+        .msg { 
+            margin: 12px 0; 
+            padding: 12px 16px; 
+            border-radius: 16px; 
+            max-width: 65%; 
+            word-wrap: break-word; 
+            font-size: 15px;
+            line-height: 1.4;
+            animation: msgPop 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+        }
+
+        @keyframes msgPop {
+            0% { opacity: 0; transform: translateY(10px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* Sent and Received Chat Themes */
+        .sent { 
+            background: linear-gradient(135deg, #00adb5 0%, #007c82 100%); 
+            margin-left: auto; 
+            color: white; 
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0, 173, 181, 0.2);
+        }
+        
+        .received { 
+            background: rgba(255, 255, 255, 0.08); 
+            color: white; 
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Modern Input Field Area */
+        .input-area { 
+            display: flex; 
+            gap: 12px; 
+        }
+        
+        .input-area input { 
+            flex-grow: 1; 
+            background: rgba(255, 255, 255, 0.05); 
+            color: white; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            padding: 14px 16px; 
+            border-radius: 14px; 
+            font-size: 15px; 
+            outline: none; 
+            transition: all 0.3s ease;
+        }
+
+        .input-area input:focus {
+            border-color: #00adb5;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 10px rgba(0, 173, 181, 0.2);
+        }
     </style>
 </head>
 <body>
 
     <div class="chat-container">
-        <div id="status-bar">Connecting...</div>
+        <!-- Live Connection Status Indicator -->
+        <div id="status-bar">Connecting to Private Base...</div>
         
-        <!-- Voice Call UI -->
+        <!-- Voice Call UI Controls -->
         <div class="call-controls">
             <button id="call-btn" class="btn btn-call" onclick="startCall()">📞 Call Partner</button>
-            <button id="answer-btn" class="btn btn-answer" onclick="answerCall()">📞 Answer</button>
+            <button id="answer-btn" class="btn btn-answer" onclick="answerCall()">📞 Answer Call</button>
             <button id="hangup-btn" class="btn btn-hangup" onclick="endCall()">❌ Hang Up</button>
         </div>
 
+        <!-- Chat Messaging Stream Area -->
         <div class="messages" id="message-container"></div>
         
+        <!-- Action Trigger Area -->
         <div class="input-area">
-            <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
-            <button class="btn" style="background: #00adb5;" onclick="sendMessage()">Send</button>
+            <input type="text" id="msg-input" placeholder="Type a message silently..." onkeypress="handleKeyPress(event)">
+            <button class="btn" style="background: linear-gradient(135deg, #00adb5 0%, #007c82 100%);" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
-    <!-- Remote Audio Element (Hidden) -->
+    <!-- Remote Audio Element (Hidden Output Node) -->
     <audio id="remote-audio" autoplay></audio>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -70,7 +238,7 @@
 
         socket.on('message', (data) => appendMessage(data.text, 'received'));
 
-        // --- WebRTC Voice Call Logic ---
+        // --- WebRTC Voice Call Framework Architecture ---
 
         async function setupMedia() {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -104,9 +272,10 @@
                 
                 callBtn.style.display = 'none';
                 hangupBtn.style.display = 'inline-block';
-                document.getElementById('status-bar').innerText = "Calling...";
+                document.getElementById('status-bar').innerText = "Calling Partner...";
+                document.getElementById('status-bar').style.color = "#ffc107";
             } catch (err) {
-                alert("Microphone access denied or error occurred.");
+                alert("Microphone access denied or hardware error occurred.");
             }
         }
 
@@ -115,7 +284,8 @@
             callBtn.style.display = 'none';
             answerBtn.style.display = 'inline-block';
             hangupBtn.style.display = 'inline-block';
-            document.getElementById('status-bar').innerText = "🔔 Incoming Call...";
+            document.getElementById('status-bar').innerText = "🔔 Incoming Voice Call...";
+            document.getElementById('status-bar').style.color = "#ffc107";
         });
 
         async function answerCall() {
@@ -129,12 +299,14 @@
             socket.emit('answer-call', { answer: answer });
             
             answerBtn.style.display = 'none';
-            document.getElementById('status-bar').innerText = "🗣️ On Call";
+            document.getElementById('status-bar').innerText = "🗣️ On Secure Call";
+            document.getElementById('status-bar').style.color = "#00ffcc";
         }
 
         socket.on('call-answered', async (data) => {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            document.getElementById('status-bar').innerText = "🗣️ On Call";
+            document.getElementById('status-bar').innerText = "🗣️ On Secure Call";
+            document.getElementById('status-bar').style.color = "#00ffcc";
         });
 
         socket.on('ice-candidate', async (candidate) => {
@@ -164,9 +336,10 @@
             answerBtn.style.display = 'none';
             hangupBtn.style.display = 'none';
             document.getElementById('status-bar').innerText = "🟢 Partner is Online";
+            document.getElementById('status-bar').style.color = "#00ffcc";
         }
 
-        // --- Chat Text Logic ---
+        // --- Real-time Chat Transmission Handler ---
         function sendMessage() {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
@@ -189,3 +362,4 @@
     </script>
 </body>
 </html>
+
