@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Private Chat & Voice Call</title>
+    <title>Private Chat & Secure Call</title>
     <style>
-        /* Dark Aesthetic Background with Animated Gradient Border Effect */
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background: radial-gradient(circle at center, #1a1a2e 0%, #0f0f1a 100%); 
@@ -18,7 +17,6 @@
             overflow: hidden;
         }
 
-        /* Modern Glassmorphic Container */
         .chat-container { 
             width: 450px; 
             background: rgba(30, 30, 30, 0.75); 
@@ -34,7 +32,6 @@
             transition: all 0.4s ease;
         }
 
-        /* Pulsating Status Bar for Online/Offline Notifications */
         #status-bar { 
             color: #aaa; 
             font-size: 14px; 
@@ -52,7 +49,6 @@
             100% { opacity: 1; text-shadow: 0 0 8px rgba(255,255,255,0.2); }
         }
         
-        /* Premium Call UI Controls */
         .call-controls { 
             display: flex; 
             justify-content: center; 
@@ -61,7 +57,6 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
         }
         
-        /* Universal Button Styling with Hover Scale Animations */
         .btn { 
             border: none; 
             padding: 12px 24px; 
@@ -77,39 +72,19 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
-        .btn:active {
-            transform: scale(0.95);
-        }
+        .btn:active { transform: scale(0.95); }
+        .btn-call { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .btn-call:hover { box-shadow: 0 0 15px rgba(40, 167, 69, 0.5); transform: translateY(-2px); }
+        .btn-hangup { background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%); display: none; }
+        .btn-hangup:hover { box-shadow: 0 0 15px rgba(220, 53, 69, 0.5); transform: translateY(-2px); }
         
-        .btn-call { 
-            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); 
-        }
-        .btn-call:hover {
-            box-shadow: 0 0 15px rgba(40, 167, 69, 0.5);
-            transform: translateY(-2px);
-        }
-        
-        .btn-hangup { 
-            background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%); 
-            display: none; 
-        }
-        .btn-hangup:hover {
-            box-shadow: 0 0 15px rgba(220, 53, 69, 0.5);
-            transform: translateY(-2px);
-        }
-        
-        /* Speaker Button Toggle Styling */
-        .btn-speaker {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            display: none;
-        }
+        .btn-speaker { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); display: none; }
         .btn-speaker.active {
             background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
             color: #000;
             box-shadow: 0 0 12px rgba(0, 242, 254, 0.6);
         }
         
-        /* Neon Blink Animation for Incoming Call */
         .btn-answer { 
             background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); 
             color: black; 
@@ -122,7 +97,6 @@
             100% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.8); transform: scale(1.03); }
         }
         
-        /* Chat Box Area with Smooth Scroll */
         .messages { 
             flex-grow: 1; 
             overflow-y: auto; 
@@ -134,16 +108,9 @@
             scroll-behavior: smooth;
         }
 
-        /* Scrollbar Customization */
-        .messages::-webkit-scrollbar {
-            width: 5px;
-        }
-        .messages::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
+        .messages::-webkit-scrollbar { width: 5px; }
+        .messages::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
         
-        /* Smooth Pop-in Animation for Chat Bubbles */
         .msg { 
             margin: 12px 0; 
             padding: 12px 16px; 
@@ -160,7 +127,6 @@
             100% { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        /* Sent and Received Chat Themes */
         .sent { 
             background: linear-gradient(135deg, #00adb5 0%, #007c82 100%); 
             margin-left: auto; 
@@ -176,12 +142,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         
-        /* Modern Input Field Area */
-        .input-area { 
-            display: flex; 
-            gap: 12px; 
-        }
-        
+        .input-area { display: flex; gap: 12px; }
         .input-area input { 
             flex-grow: 1; 
             background: rgba(255, 255, 255, 0.05); 
@@ -193,21 +154,14 @@
             outline: none; 
             transition: all 0.3s ease;
         }
-
-        .input-area input:focus {
-            border-color: #00adb5;
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 10px rgba(0, 173, 181, 0.2);
-        }
+        .input-area input:focus { border-color: #00adb5; background: rgba(255, 255, 255, 0.08); box-shadow: 0 0 10px rgba(0, 173, 181, 0.2); }
     </style>
 </head>
 <body>
 
     <div class="chat-container">
-        <!-- Live Connection Status Indicator -->
         <div id="status-bar">Connecting to Private Base...</div>
         
-        <!-- Voice Call UI Controls -->
         <div class="call-controls">
             <button id="call-btn" class="btn btn-call" onclick="startCall()">📞 Call Partner</button>
             <button id="answer-btn" class="btn btn-answer" onclick="answerCall()">📞 Answer Call</button>
@@ -215,19 +169,16 @@
             <button id="hangup-btn" class="btn btn-hangup" onclick="endCall()">❌ Hang Up</button>
         </div>
 
-        <!-- Chat Messaging Stream Area -->
         <div class="messages" id="message-container"></div>
         
-        <!-- Action Trigger Area -->
         <div class="input-area">
             <input type="text" id="msg-input" placeholder="Type a message silently..." onkeypress="handleKeyPress(event)">
             <button class="btn" style="background: linear-gradient(135deg, #00adb5 0%, #007c82 100%);" onclick="sendMessage()">Send</button>
         </div>
     </div>
 
-    <!-- Remote Audio Element (Hidden Output Node) -->
-    <!-- playsinline aur controls hata kar strict earpiece mode mapping target kiya hai -->
-    <audio id="remote-audio" autoplay playsinline></audio>
+    <!-- Hidden standard element mapped with explicit attributes for non-intrusive stream injection -->
+    <audio id="remote-audio" autoplay playsinline style="display:none;"></audio>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -236,6 +187,7 @@
         let peerConnection;
         let incomingOffer;
         let isSpeakerOn = false;
+        let audioCtx, mediaStreamSource, remoteAudioNode;
 
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
@@ -253,10 +205,7 @@
 
         socket.on('message', (data) => appendMessage(data.text, 'received'));
 
-        // --- WebRTC Voice Call Framework Architecture ---
-
         async function setupMedia() {
-            // Mobile Optimization: Call mode settings to force earpiece by default
             localStream = await navigator.mediaDevices.getUserMedia({ 
                 audio: {
                     echoCancellation: true,
@@ -269,13 +218,31 @@
 
         async function createPeerConnection() {
             peerConnection = new RTCPeerConnection(rtcConfig);
-            
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
             peerConnection.ontrack = (event) => {
-                remoteAudio.srcObject = event.streams[0];
-                // Call connect hote hi direct earpiece mode enforce karo
-                setSpeakerState(false);
+                const stream = event.streams[0];
+                remoteAudio.srcObject = stream;
+                
+                // Audio Architecture Optimization for Earpiece Output Enforcing
+                try {
+                    if (!audioCtx) {
+                        // Creating Web Audio Instance targeting Telephone Output modes
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+                    }
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                    
+                    mediaStreamSource = audioCtx.createMediaStreamSource(stream);
+                    remoteAudioNode = audioCtx.destination;
+                    mediaStreamSource.connect(remoteAudioNode);
+                    
+                    // Standard Initial Output State Routing Force
+                    setSpeakerState(false);
+                } catch(e) {
+                    console.log("Audio routing engine fallback triggered.");
+                }
             };
 
             peerConnection.onicecandidate = (event) => {
@@ -301,7 +268,7 @@
                 document.getElementById('status-bar').innerText = "Calling Partner...";
                 document.getElementById('status-bar').style.color = "#ffc107";
             } catch (err) {
-                alert("Microphone access denied or hardware error occurred.");
+                alert("Microphone configuration or hardware access error.");
             }
         }
 
@@ -342,7 +309,7 @@
             }
         });
 
-        // --- Speaker Control Engine ---
+        // --- Standard Core Speaker Toggling Node ---
         function toggleSpeaker() {
             isSpeakerOn = !isSpeakerOn;
             setSpeakerState(isSpeakerOn);
@@ -350,27 +317,23 @@
 
         function setSpeakerState(enableSpeaker) {
             if (enableSpeaker) {
-                // Main Loud Speaker Mode
+                // Speaker Phone Mode (System standard routing)
                 if (typeof remoteAudio.setSinkId === 'function') {
                     remoteAudio.setSinkId('').catch(() => {});
                 }
+                remoteAudio.volume = 1.0;
                 speakerBtn.classList.add('active');
                 speakerBtn.innerText = "🔊 Speaker ON";
             } else {
-                // Earpiece Mode (Top Camera Speaker)
+                // Camera Earpiece Mode Enforcing
                 if (typeof remoteAudio.setSinkId === 'function') {
-                    // Try routing directly to mobile earpiece communications output node
+                    // Injecting standard communication profile string parameters
                     remoteAudio.setSinkId('communication').catch(() => {
-                        // Fallback constraint toggle
-                        if(remoteAudio.sinkId !== 'communication') {
-                            remoteAudio.srcObject.getAudioTracks().forEach(track => {
-                                if(track.getConstraints) {
-                                    track.applyConstraints({echoCancellation: true});
-                                }
-                            });
-                        }
+                        remoteAudio.setSinkId('earpiece').catch(() => {});
                     });
                 }
+                // Attenuate stream context constraints slightly to shift hardware audio layers
+                remoteAudio.volume = 0.35; 
                 speakerBtn.classList.remove('active');
                 speakerBtn.innerText = "📢 Speaker OFF";
             }
@@ -393,6 +356,10 @@
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
+            if(audioCtx) {
+                audioCtx.close();
+                audioCtx = null;
+            }
             isSpeakerOn = false;
             callBtn.style.display = 'inline-block';
             answerBtn.style.display = 'none';
@@ -403,7 +370,6 @@
             document.getElementById('status-bar').style.color = "#00ffcc";
         }
 
-        // --- Real-time Chat Transmission Handler ---
         function sendMessage() {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
