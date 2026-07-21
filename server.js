@@ -21,7 +21,7 @@ let activeUsers = 0;
 
 // Admin Credentials
 const ADMIN_USER = "sumit@1123";
-const ADMIN_PASS = "sumit@1123";
+const ADMIN_PASS = "sumit1123";
 
 // Routes
 app.get('/', (req, res) => {
@@ -55,12 +55,12 @@ io.on('connection', (socket) => {
 
     socket.broadcast.emit('status-change', { online: true, text: '🟢 Partner is Online' });
 
-    // Handles Test, Images, and Videos
+    // Handles Text, Images, and Videos
     socket.on('chat-message', (data) => {
         const msgData = {
             type: data.type || 'text',
             content: data.content,
-            timestamp: new Date().toLocaleString()
+            timestamp: new Date().toLocaleTimeString()
         };
 
         chatHistory.push(msgData);
@@ -69,21 +69,21 @@ io.on('connection', (socket) => {
 
     // Call signaling
     socket.on('call-user', (data) => {
-        callLogs.push({ event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleString() });
+        callLogs.push({ event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleTimeString() });
         socket.broadcast.emit('incoming-call', data);
     });
 
     socket.on('answer-call', (data) => {
-        callLogs.push({ event: 'Call Connected', timestamp: new Date().toLocaleString() });
+        callLogs.push({ event: 'Call Connected', timestamp: new Date().toLocaleTimeString() });
         socket.broadcast.emit('call-answered', data);
     });
 
     socket.on('ice-candidate', (candidate) => {
-        socket.broadcast.emit('ice-candidate', { candidate });
+        socket.broadcast.emit('ice-candidate', candidate);
     });
 
     socket.on('end-call', () => {
-        callLogs.push({ event: 'Call Ended', timestamp: new Date().toLocaleString() });
+        callLogs.push({ event: 'Call Ended', timestamp: new Date().toLocaleTimeString() });
         socket.broadcast.emit('call-ended');
     });
 
@@ -94,4 +94,6 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
