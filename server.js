@@ -5,27 +5,34 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
 
-app.use(express.json());
+// Socket.io limit: Max ~10MB per media file
+const io = new Server(server, {
+    maxHttpBufferSize: 1e7
+});
 
-// FIXED: Ab ye root folder se index.html aur history.html serve karega
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(__dirname));
 
 let chatHistory = [];
 let callLogs = [];
 let activeUsers = 0;
 
-// Credentials
+// Admin Credentials
 const ADMIN_USER = "sumit@1123";
 const ADMIN_PASS = "sumit1123";
 
-// Route for homepage
+// Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Secure API Route for History
+app.get('/history.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'history.html'));
+});
+
+// History Vault API
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
@@ -35,7 +42,7 @@ app.post('/api/history', (req, res) => {
     }
 });
 
-// Socket.io Connection Logic
+// Socket.io Signaling & Messaging
 io.on('connection', (socket) => {
     activeUsers++;
 
@@ -48,12 +55,19 @@ io.on('connection', (socket) => {
 
     socket.broadcast.emit('status-change', { online: true, text: '🟢 Partner is Online' });
 
+    // Handles Text, Images, and Videos
     socket.on('chat-message', (data) => {
-        const msgData = { text: data.text, timestamp: new Date().toLocaleString() };
+        const msgData = { 
+            type: data.type || 'text',
+            content: data.content,
+            timestamp: new Date().toLocaleString() 
+        };
+        
         chatHistory.push(msgData);
         socket.broadcast.emit('message', msgData);
     });
 
+    // Call signaling
     socket.on('call-user', (data) => {
         callLogs.push({ event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleString() });
         socket.broadcast.emit('incoming-call', data);
