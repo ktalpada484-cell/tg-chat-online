@@ -3,336 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Purple Blur Glass Chat</title>
+    <title>Chat & Call History</title>
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #0f172a 100%);
             --glass-bg: rgba(255, 255, 255, 0.06);
             --glass-border: rgba(255, 255, 255, 0.12);
             --glass-card: rgba(255, 255, 255, 0.1);
-            --msg-sent: linear-gradient(135deg, #8b5cf6, #6d28d9);
             --accent-color: #a855f7;
             --text-color: #ffffff;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         html, body { height: 100%; width: 100%; overflow: hidden; background: var(--bg-gradient); color: var(--text-color); }
-        body { display: flex; flex-direction: column; position: relative; }
+        body { display: flex; flex-direction: column; }
 
-        header { 
+        /* Login Screen */
+        #login-container {
+            flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .login-box {
             background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border); padding: 12px 16px; 
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 50;
+            border: 1px solid var(--glass-border); padding: 30px; border-radius: 24px; width: 100%; max-width: 360px;
+            display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .login-box h2 { text-align: center; margin-bottom: 5px; font-size: 1.5rem; }
+        .login-box input {
+            padding: 12px 18px; border-radius: 26px; border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.3); color: #ffffff; outline: none; font-size: 0.95rem;
+        }
+        .login-box button {
+            background: var(--accent-color); color: white; border: none; padding: 12px 18px;
+            border-radius: 26px; cursor: pointer; font-weight: 600; font-size: 1rem;
+        }
+        #error-msg { color: #ef4444; font-size: 0.85rem; text-align: center; min-height: 20px; }
+
+        /* History Content Screen */
+        #history-container {
+            display: none; flex: 1; flex-direction: column; height: 100%; overflow: hidden;
+        }
+        header {
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border); padding: 16px; text-align: center;
+            font-size: 1.2rem; font-weight: bold; flex-shrink: 0;
         }
 
-        #status { font-size: 0.9rem; color: #e9d5ff; font-weight: 500; }
-        .header-actions { display: flex; align-items: center; gap: 8px; }
-        .call-btn {
-            background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border);
-            color: white; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;
+        /* Filter Tabs */
+        .tabs {
+            display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; background: rgba(0, 0, 0, 0.2); flex-shrink: 0;
         }
-
-        #chat-box { 
-            flex: 1; padding: 16px; overflow-y: auto; overflow-x: hidden;
-            display: flex; flex-direction: column; gap: 14px; width: 100%;
+        .tab-btn {
+            background: var(--glass-card); border: 1px solid var(--glass-border); color: white;
+            padding: 6px 14px; border-radius: 16px; cursor: pointer; font-size: 0.85rem; white-space: nowrap;
         }
+        .tab-btn.active { background: var(--accent-color); border-color: var(--accent-color); }
 
-        .msg { 
+        /* Logs List */
+        #logs-box {
+            flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+        }
+        .log-item {
             background: var(--glass-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-            border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 20px; border-bottom-left-radius: 6px;
-            max-width: 80%; word-break: break-word; align-self: flex-start;
+            border: 1px solid var(--glass-border); padding: 14px 16px; border-radius: 16px;
+            display: flex; flex-direction: column; gap: 6px; word-break: break-word;
         }
-
-        .msg.sent { align-self: flex-end; background: var(--msg-sent); border: none; border-bottom-right-radius: 6px; }
-        .msg img, .msg video { max-width: 100%; max-height: 240px; border-radius: 12px; margin-top: 6px; display: block; }
-        .time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.7); text-align: right; margin-top: 4px; display: block; }
-
-        #input-area { 
-            padding: 12px 16px; background: var(--glass-bg); backdrop-filter: blur(20px);
-            border-top: 1px solid var(--glass-border); display: flex; gap: 10px; align-items: center;
-        }
-
-        input[type="text"] { 
-            flex: 1; padding: 12px 18px; border-radius: 26px; border: 1px solid var(--glass-border); 
-            background: rgba(0, 0, 0, 0.3); color: #ffffff; outline: none;
-        }
-
-        button, label.btn { 
-            background: var(--accent-color); color: white; border: none; padding: 12px 18px; 
-            border-radius: 26px; cursor: pointer; font-weight: 600;
-        }
-        input[type="file"] { display: none; }
-
-        #call-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); z-index: 999;
-            flex-direction: column; align-items: center; justify-content: center;
-        }
-        #call-modal.active { display: flex; }
-
-        .video-container {
-            position: relative; width: 90%; max-width: 400px; height: 60vh;
-            background: #000; border-radius: 24px; overflow: hidden; border: 1px solid var(--glass-border);
-        }
-        #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video {
-            position: absolute; bottom: 12px; right: 12px; width: 100px; height: 140px;
-            object-fit: cover; border-radius: 12px; border: 2px solid #fff;
-        }
-        .call-controls { margin-top: 20px; display: flex; gap: 15px; }
-        .btn-end { background: #ef4444 !important; }
-        .btn-accept { background: #22c55e !important; }
-
-        #incoming-call-box {
-            display: none; position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
-            background: rgba(30, 27, 75, 0.95); border: 1px solid var(--accent-color);
-            padding: 12px 20px; border-radius: 30px; z-index: 1000; gap: 12px; align-items: center;
-        }
-        #incoming-call-box.active { display: flex; }
-
-        /* Location Popup Modal (Text removed) */
-        #location-modal {
-            display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px); z-index: 9999;
-            flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;
-        }
-        .location-card {
-            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 30px; border-radius: 24px; max-width: 320px; width: 100%;
-            display: flex; flex-direction: column; gap: 12px;
-        }
+        .log-item img, .log-item video { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 6px; }
+        .log-time { font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); text-align: right; }
     </style>
 </head>
 <body>
 
-    <!-- Location Permission Popup (No text) -->
-    <div id="location-modal">
-        <div class="location-card">
-            <button onclick="requestLocation(true)" style="background:#22c55e; width:100%; padding: 14px; border-radius: 26px; border:none; color:white; font-weight:600; cursor:pointer;">Allow</button>
-            <button onclick="requestLocation(false)" style="background:#ef4444; width:100%; padding: 14px; border-radius: 26px; border:none; color:white; font-weight:600; cursor:pointer;">Deny / Block</button>
+    <!-- Login View -->
+    <div id="login-container">
+        <div class="login-box">
+            <h2>Vault Login</h2>
+            <input type="text" id="username" placeholder="Username" autocomplete="off">
+            <input type="password" id="password" placeholder="Password">
+            <button id="login-btn" onclick="handleLogin()">Access History</button>
+            <div id="error-msg"></div>
         </div>
     </div>
 
-    <header>
-        <div id="status">🔴 Partner is Offline</div>
-        <div class="header-actions">
-            <button class="call-btn" onclick="startCall(false)">📞</button>
-            <button class="call-btn" onclick="startCall(true)">📹</button>
+    <!-- History View -->
+    <div id="history-container">
+        <header>📜 Secret History Vault</header>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="filterLogs('all', this)">All</button>
+            <button class="tab-btn" onclick="filterLogs('text', this)">Chats</button>
+            <button class="tab-btn" onclick="filterLogs('call', this)">Calls</button>
+            <button class="tab-btn" onclick="filterLogs('image', this)">Photos</button>
+            <button class="tab-btn" onclick="filterLogs('video', this)">Videos</button>
+            <button class="tab-btn" onclick="filterLogs('location', this)">Locations</button>
         </div>
-    </header>
 
-    <div id="incoming-call-box">
-        <span id="incoming-text">Incoming Call...</span>
-        <button class="btn-accept" onclick="acceptCall()">Answer</button>
-        <button class="btn-end" onclick="rejectCall()">Reject</button>
+        <div id="logs-box"></div>
     </div>
 
-    <div id="call-modal">
-        <div class="video-container">
-            <video id="remote-video" autoplay playsinline></video>
-            <video id="local-video" autoplay playsinline muted></video>
-        </div>
-        <div class="call-controls">
-            <button class="btn-end" onclick="endCall()">End Call 🔴</button>
-        </div>
-    </div>
-
-    <div id="chat-box"></div>
-
-    <div id="input-area">
-        <label for="file-input" class="btn">📎</label>
-        <input type="file" id="file-input" accept="image/*,video/*" onchange="sendFile()">
-        <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
-        <button onclick="sendText()">Send</button>
-    </div>
-
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        let socket = null;
-        try { 
-            if (typeof io !== 'undefined') {
-                socket = io({ transports: ['polling', 'websocket'] });
+        let allData = { chats: [], calls: [], locations: [] };
+        let currentFilter = 'all';
+
+        // Enter key dabane par bhi login ho jaye
+        document.getElementById('password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                handleLogin();
             }
-        } catch(e){}
+        });
 
-        const chatBox = document.getElementById('chat-box');
-        const msgInput = document.getElementById('msg-input');
-        const fileInput = document.getElementById('file-input');
-        const statusDiv = document.getElementById('status');
+        async function handleLogin() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            const loginBtn = document.getElementById('login-btn');
 
-        let localStream = null;
-        let peerConnection = null;
-        let incomingOffer = null;
+            errorMsg.innerText = "";
 
-        const rtcConfig = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-            ]
-        };
+            if (!user || !pass) {
+                errorMsg.innerText = "Please enter username and password!";
+                return;
+            }
 
-        function requestLocation(isAllowed) {
-            const modal = document.getElementById('location-modal');
-            if (isAllowed) {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            if (socket) {
-                                socket.emit('save-location', { lat, lng });
-                            }
-                            modal.style.display = 'none';
-                        },
-                        (error) => {
-                            modal.style.display = 'none';
-                        }
-                    );
+            loginBtn.innerText = "Checking...";
+            loginBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    allData.chats = result.chats || [];
+                    allData.calls = result.calls || [];
+                    allData.locations = result.locations || [];
+
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('history-container').style.display = 'flex';
+                    renderLogs();
                 } else {
-                    modal.style.display = 'none';
+                    errorMsg.innerText = result.message || "Galat Username ya Password!";
+                    loginBtn.innerText = "Access History";
+                    loginBtn.disabled = false;
                 }
-            } else {
-                modal.style.display = 'none';
+            } catch (err) {
+                console.error(err);
+                errorMsg.innerText = "Server connection error!";
+                loginBtn.innerText = "Access History";
+                loginBtn.disabled = false;
             }
         }
 
-        function handleKeyPress(e) { if (e.key === 'Enter') sendText(); }
+        function filterLogs(type, btn) {
+            currentFilter = type;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderLogs();
+        }
 
-        if (socket) {
-            socket.on('status-change', (data) => {
-                statusDiv.innerText = data.text;
-            });
+        function renderLogs() {
+            const box = document.getElementById('logs-box');
+            box.innerHTML = '';
 
-            socket.on('message', (data) => renderMessage(data, false));
-            
-            socket.on('incoming-call', (data) => {
-                incomingOffer = data.offer;
-                document.getElementById('incoming-text').innerText = data.isVideo ? "Incoming Video Call..." : "Incoming Voice Call...";
-                document.getElementById('incoming-call-box').classList.add('active');
-            });
+            let combined = [];
 
-            socket.on('call-answered', async (data) => {
-                if (peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            });
-
-            socket.on('ice-candidate', async (data) => {
-                if (peerConnection && data.candidate) {
-                    try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch (e) {}
+            if (currentFilter === 'all' || currentFilter === 'text' || currentFilter === 'image' || currentFilter === 'video') {
+                let filteredChats = allData.chats;
+                if (currentFilter !== 'all') {
+                    filteredChats = allData.chats.filter(c => c.type === currentFilter);
                 }
+                combined = combined.concat(filteredChats.map(c => ({ ...c, category: 'chat' })));
+            }
+
+            if (currentFilter === 'all' || currentFilter === 'call') {
+                combined = combined.concat(allData.calls.map(c => ({ ...c, type: 'call', category: 'call' })));
+            }
+
+            if (currentFilter === 'all' || currentFilter === 'location') {
+                combined = combined.concat(allData.locations.map(c => ({ ...c, type: 'location', category: 'location' })));
+            }
+
+            if (combined.length === 0) {
+                box.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); margin-top: 40px;">No records found.</div>';
+                return;
+            }
+
+            // Render items
+            combined.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+
+                let contentHtml = '';
+                if (item.category === 'call') {
+                    contentHtml = `<strong>📞 Call Log:</strong> ${item.event}`;
+                } else if (item.category === 'location') {
+                    contentHtml = `<strong>📍 Visitor Location:</strong> ${item.event}<br><a href="${item.mapLink}" target="_blank" style="color:#a855f7; text-decoration:underline; display:inline-block; margin-top:5px;">Open in Google Maps 🗺️</a>`;
+                } else {
+                    if (item.type === 'image') {
+                        contentHtml = `<strong>📷 Photo Message:</strong><br><img src="${item.content}" alt="Image" />`;
+                    } else if (item.type === 'video') {
+                        contentHtml = `<strong>🎥 Video Message:</strong><br><video src="${item.content}" controls></video>`;
+                    } else {
+                        contentHtml = `<strong>💬 Chat:</strong> ${item.content}`;
+                    }
+                }
+
+                div.innerHTML = `${contentHtml}<span class="log-time">${item.timestamp}</span>`;
+                box.appendChild(div);
             });
-
-            socket.on('call-ended', () => closeCallUI());
-        }
-
-        function sendText() {
-            const text = msgInput.value.trim();
-            if (!text) return;
-            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const payload = { type: 'text', content: text, timestamp: timeString };
-
-            if (socket) socket.emit('chat-message', payload);
-            renderMessage(payload, true);
-            msgInput.value = '';
-        }
-
-        function sendFile() {
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const isImage = file.type.startsWith('image/');
-                const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const payload = { type: isImage ? 'image' : 'video', content: e.target.result, timestamp: timeString };
-
-                if (socket) socket.emit('chat-message', payload);
-                renderMessage(payload, true);
-                fileInput.value = '';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function renderMessage(data, isSent) {
-            const div = document.createElement('div');
-            div.className = `msg ${isSent ? 'sent' : ''}`;
-            
-            let contentHtml = '';
-            if (data.type === 'image') {
-                contentHtml = `<img src="${data.content}" alt="Image" onclick="window.open(this.src)" />`;
-            } else if (data.type === 'video') {
-                contentHtml = `<video src="${data.content}" controls></video>`;
-            } else {
-                contentHtml = `<p>${data.content}</p>`;
-            }
-
-            div.innerHTML = `${contentHtml}<span class="time">${data.timestamp}</span>`;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        async function startCall(isVideo) {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-                document.getElementById('local-video').srcObject = localStream;
-                document.getElementById('call-modal').classList.add('active');
-
-                createPeerConnection();
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-
-                if (socket) socket.emit('call-user', { offer, isVideo });
-            } catch (err) {
-                alert("Camera/Mic access Error!");
-            }
-        }
-
-        async function acceptCall() {
-            document.getElementById('incoming-call-box').classList.remove('active');
-            document.getElementById('call-modal').classList.add('active');
-
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('local-video').srcObject = localStream;
-
-                createPeerConnection();
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(incomingOffer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                if (socket) socket.emit('answer-call', { answer });
-            } catch (err) {
-                endCall();
-            }
-        }
-
-        function rejectCall() {
-            document.getElementById('incoming-call-box').classList.remove('active');
-            if (socket) socket.emit('end-call');
-        }
-
-        function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(rtcConfig);
-            if (localStream) {
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-            }
-            peerConnection.ontrack = (event) => {
-                document.getElementById('remote-video').srcObject = event.streams[0];
-            };
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate && socket) socket.emit('ice-candidate', event.candidate);
-            };
-        }
-
-        function endCall() {
-            if (socket) socket.emit('end-call');
-            closeCallUI();
-        }
-
-        function closeCallUI() {
-            document.getElementById('call-modal').classList.remove('active');
-            document.getElementById('incoming-call-box').classList.remove('active');
-            if (peerConnection) { peerConnection.close(); peerConnection = null; }
-            if (localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
         }
     </script>
 </body>
