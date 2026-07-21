@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Private History Vault</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f1a; color: #fff; padding: 30px; display: flex; justify-content: center; align-items: center; min-height: 80vh; margin: 0; }
+        .container { width: 500px; background: rgba(30, 30, 30, 0.85); border-radius: 16px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); }
+        h2 { text-align: center; color: #00adb5; margin-bottom: 20px; }
+        
+        .login-box { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+        .login-box input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; color: white; outline: none; font-size: 14px; }
+        .login-box button { background: linear-gradient(135deg, #00adb5 0%, #007c82 100%); border: none; padding: 12px; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; }
+        
+        #history-content { display: none; }
+        .section-title { font-size: 15px; color: #ffc107; margin-top: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px; }
+        .log-box { background: rgba(0,0,0,0.4); border-radius: 10px; padding: 12px; max-height: 220px; overflow-y: auto; margin-top: 10px; }
+        .item { padding: 8px 10px; margin: 6px 0; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 13px; display: flex; justify-content: space-between; }
+        .time { opacity: 0.6; font-size: 11px; }
+        #error-msg { color: #ff4a4a; text-align: center; font-size: 13px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🔒 Private History Vault</h2>
+
+        <div id="login-section" class="login-box">
+            <p style="text-align: center; color: #aaa; font-size: 13px; margin: 0;">Enter credentials to view logs</p>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="authenticate()">Unlock History</button>
+            <div id="error-msg"></div>
+        </div>
+
+        <div id="history-content">
+            <div class="section-title">💬 Chat Messages History</div>
+            <div class="log-box" id="chat-logs"></div>
+
+            <div class="section-title">📞 Call Activity Logs</div>
+            <div class="log-box" id="call-logs"></div>
+
+            <button onclick="location.reload()" style="width: 100%; margin-top: 15px; padding: 10px; background: #333; border: 1px solid #555; color: white; border-radius: 8px; cursor: pointer;">🔒 Lock & Refresh</button>
+        </div>
+    </div>
+
+    <script>
+        async function authenticate() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const errorMsg = document.getElementById('error-msg');
+
+            try {
+                const response = await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('history-content').style.display = 'block';
+
+                    const chatContainer = document.getElementById('chat-logs');
+                    chatContainer.innerHTML = data.chats.length === 0 ? '<div class="item">No chats recorded.</div>' : '';
+                    data.chats.forEach(chat => {
+                        chatContainer.innerHTML += `<div class="item"><span>${chat.text}</span> <span class="time">${chat.timestamp}</span></div>`;
+                    });
+
+                    const callContainer = document.getElementById('call-logs');
+                    callContainer.innerHTML = data.calls.length === 0 ? '<div class="item">No call logs recorded.</div>' : '';
+                    data.calls.forEach(call => {
+                        callContainer.innerHTML += `<div class="item"><span>${call.event}</span> <span class="time">${call.timestamp}</span></div>`;
+                    });
+
+                } else {
+                    errorMsg.style.display = 'block';
+                    errorMsg.innerText = data.message;
+                }
+            } catch (err) {
+                errorMsg.style.display = 'block';
+                errorMsg.innerText = "Error connecting to server.";
+            }
+        }
+    </script>
+</body>
+</html>
