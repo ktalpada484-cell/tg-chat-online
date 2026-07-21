@@ -251,7 +251,7 @@
             display: none; 
         }
 
-        /* Modal Overlays Fix: Pointer events disabled when hidden */
+        /* Modal Overlays Fix */
         #call-modal {
             display: none;
             pointer-events: none;
@@ -391,6 +391,13 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Helper to sanitize text HTML rendering
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
         // Global Socket & UI Init
         let socket = null;
         try {
@@ -532,7 +539,7 @@
             
             let contentHtml = '';
             if (data.type === 'image') {
-                contentHtml = `<img src="${data.content}" class="chat-media" alt="Media" />`;
+                contentHtml = `<img src="${data.content}" class="chat-media" alt="Media" onclick="window.open(this.src)" />`;
             } else if (data.type === 'video') {
                 contentHtml = `<video src="${data.content}" controls class="chat-media"></video>`;
             } else {
@@ -614,10 +621,4 @@
         }
 
         function closeCallUI() {
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            
+            document.getEle
