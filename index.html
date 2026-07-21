@@ -3,69 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TG Chat Online</title>
+    <title>Glass Chat App</title>
     <style>
         :root {
-            --bg-color: #0d1117;
-            --header-bg: #161b22;
-            --msg-sent-bg: #007bff;
-            --accent-color: #007bff;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-card: rgba(255, 255, 255, 0.1);
+            --msg-sent: linear-gradient(135deg, #2563eb, #1d4ed8);
+            --accent-color: #3b82f6;
             --text-color: #ffffff;
-            --card-bg: #21262d;
         }
 
-        /* Pink Theme Class */
         body.theme-pink {
-            --bg-color: #1a0914;
-            --header-bg: #2d0d22;
-            --msg-sent-bg: #e83e8c;
-            --accent-color: #e83e8c;
-            --text-color: #ffffff;
-            --card-bg: #3b142d;
+            --bg-gradient: linear-gradient(135deg, #2e1065 0%, #701a75 50%, #4c0519 100%);
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-card: rgba(255, 255, 255, 0.12);
+            --msg-sent: linear-gradient(135deg, #ec4899, #be185d);
+            --accent-color: #ec4899;
         }
 
-        /* Blue Theme Class */
-        body.theme-blue {
-            --bg-color: #0d1117;
-            --header-bg: #161b22;
-            --msg-sent-bg: #007bff;
-            --accent-color: #007bff;
-            --text-color: #ffffff;
-            --card-bg: #21262d;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
         html, body {
             height: 100%;
             width: 100%;
-            overflow: hidden; /* Page ko extra scroll hone se rokne ke liye */
-            background: var(--bg-color);
+            overflow: hidden;
+            background: var(--bg-gradient);
             color: var(--text-color);
-            transition: background 0.3s ease;
+            transition: background 0.5s ease;
         }
 
         body {
             display: flex;
             flex-direction: column;
         }
-        
+
+        /* Glassmorphism Header */
         header { 
-            background: var(--header-bg); 
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border);
             padding: 10px 15px; 
-            text-align: center; 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             flex-shrink: 0;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
-        header h1 { font-size: 1.1rem; font-weight: 600; }
-        #status { font-size: 0.8rem; color: #aaa; margin-top: 2px; }
 
-        /* Theme Buttons */
-        .theme-switcher { display: flex; justify-content: center; gap: 10px; margin-top: 6px; }
-        .theme-btn { border: none; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; color: #fff; font-weight: bold; }
-        .btn-blue { background: #007bff; }
-        .btn-pink { background: #e83e8c; }
+        .header-left { display: flex; flex-direction: column; }
+        #status { font-size: 0.8rem; color: #cbd5e1; font-weight: 500; }
 
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+
+        .call-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .call-btn:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); }
+
+        .theme-switcher { display: flex; gap: 6px; }
+        .theme-btn { border: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; color: #fff; font-weight: 600; }
+        .btn-blue { background: #2563eb; }
+        .btn-pink { background: #ec4899; }
+
+        /* Chat Container & Animations */
         #chat-box { 
             flex: 1; 
             padding: 15px; 
@@ -76,57 +88,78 @@
             gap: 12px; 
             width: 100%;
         }
-        
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
         .msg { 
-            background: var(--card-bg); 
-            padding: 10px 12px; 
-            border-radius: 12px; 
-            max-width: 75%; 
+            background: var(--glass-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 10px 14px; 
+            border-radius: 16px; 
+            border-bottom-left-radius: 4px;
+            max-width: 78%; 
             word-break: break-word; 
             align-self: flex-start; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .msg.sent { align-self: flex-end; background: var(--msg-sent-bg); }
-        
-        /* Media Sizing Fixes */
+
+        .msg.sent { 
+            align-self: flex-end; 
+            background: var(--msg-sent); 
+            border: none;
+            border-radius: 16px;
+            border-bottom-right-radius: 4px;
+        }
+
         .msg img, .msg video { 
             max-width: 100%; 
             max-height: 220px; 
             width: auto;
             height: auto;
             object-fit: contain; 
-            border-radius: 8px; 
+            border-radius: 10px; 
             margin-top: 6px; 
             display: block; 
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
-            -webkit-touch-callout: none;
         }
 
-        .time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.7); text-align: right; margin-top: 4px; display: block; }
-        
+        .time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.75); text-align: right; margin-top: 4px; display: block; }
+
+        /* Glass Input Bar */
         #input-area { 
-            padding: 10px; 
-            background: var(--header-bg); 
+            padding: 10px 12px; 
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--glass-border);
             display: flex; 
             gap: 8px; 
             align-items: center; 
-            border-top: 1px solid rgba(255, 255, 255, 0.1); 
             flex-shrink: 0;
             width: 100%;
         }
+
         input[type="text"] { 
             flex: 1; 
-            padding: 10px 15px; 
+            padding: 10px 16px; 
             border-radius: 20px; 
-            border: none; 
-            background: rgba(255, 255, 255, 0.1); 
+            border: 1px solid var(--glass-border); 
+            background: rgba(0, 0, 0, 0.2); 
             color: #fff; 
             outline: none; 
             font-size: 0.95rem; 
             min-width: 0;
         }
+        input[type="text"]::placeholder { color: #94a3b8; }
+
         button, label.btn { 
             background: var(--accent-color); 
             color: white; 
@@ -135,23 +168,109 @@
             border-radius: 20px; 
             cursor: pointer; 
             font-size: 0.9rem; 
-            font-weight: 500; 
+            font-weight: 600; 
             flex-shrink: 0;
+            transition: opacity 0.2s, transform 0.1s;
         }
-        button:active, label.btn:active { opacity: 0.8; }
+        button:active, label.btn:active { opacity: 0.8; transform: scale(0.96); }
         input[type="file"] { display: none; }
+
+        /* Video Call Modal Overlay */
+        #call-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-container {
+            position: relative;
+            width: 90%;
+            max-width: 400px;
+            height: 60vh;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+        }
+
+        #remote-video { width: 100%; height: 100%; object-fit: cover; }
+        #local-video {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            width: 100px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid white;
+        }
+
+        .call-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-end { background: #ef4444 !important; }
+        .btn-accept { background: #22c55e !important; }
+
+        /* Incoming Call Toast */
+        #incoming-call-box {
+            display: none;
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--accent-color);
+            padding: 12px 20px;
+            border-radius: 30px;
+            z-index: 100;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            align-items: center;
+            gap: 15px;
+        }
     </style>
 </head>
 <body class="theme-blue">
 
     <header>
-        <h1>TG Chat Online</h1>
-        <div id="status">🔴 Partner is Offline</div>
-        <div class="theme-switcher">
-            <button class="theme-btn btn-blue" onclick="setTheme('blue')">Blue</button>
-            <button class="theme-btn btn-pink" onclick="setTheme('pink')">Pink</button>
+        <div class="header-left">
+            <div id="status">🔴 Partner is Offline</div>
+        </div>
+        <div class="header-actions">
+            <button class="call-btn" onclick="startCall(false)" title="Audio Call">📞</button>
+            <button class="call-btn" onclick="startCall(true)" title="Video Call">📹</button>
+            <div class="theme-switcher">
+                <button class="theme-btn btn-blue" onclick="setTheme('blue')">Blue</button>
+                <button class="theme-btn btn-pink" onclick="setTheme('pink')">Pink</button>
+            </div>
         </div>
     </header>
+
+    <!-- Incoming Call Banner -->
+    <div id="incoming-call-box">
+        <span id="incoming-text">Incoming Call...</span>
+        <button class="btn-accept" onclick="acceptCall()">Answer</button>
+        <button class="btn-end" onclick="rejectCall()">Reject</button>
+    </div>
+
+    <!-- Active Call UI Modal -->
+    <div id="call-modal">
+        <div class="video-container">
+            <video id="remote-video" autoplay playsinline></video>
+            <video id="local-video" autoplay playsinline muted></video>
+        </div>
+        <div class="call-controls">
+            <button class="btn-end" onclick="endCall()">End Call 🔴</button>
+        </div>
+    </div>
 
     <div id="chat-box"></div>
 
@@ -168,6 +287,15 @@
         const chatBox = document.getElementById('chat-box');
         const statusDiv = document.getElementById('status');
 
+        let localStream;
+        let peerConnection;
+        let incomingOffer;
+
+        const rtcConfig = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
+
+        // Theme Toggle Logic
         function setTheme(themeName) {
             document.body.className = `theme-${themeName}`;
             localStorage.setItem('chat-theme', themeName);
@@ -178,6 +306,7 @@
             setTheme(savedTheme);
         }
 
+        // Socket Events
         socket.on('status-change', (data) => {
             statusDiv.innerText = data.text;
         });
@@ -190,6 +319,107 @@
             renderMessage(data, false);
         });
 
+        // Call Signaling Events
+        socket.on('incoming-call', async (data) => {
+            incomingOffer = data.offer;
+            document.getElementById('incoming-text').innerText = data.isVideo ? "Incoming Video Call..." : "Incoming Voice Call...";
+            document.getElementById('incoming-call-box').style.display = 'flex';
+        });
+
+        socket.on('call-answered', async (data) => {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        });
+
+        socket.on('ice-candidate', async (data) => {
+            if (peerConnection && data.candidate) {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        });
+
+        socket.on('call-ended', () => {
+            closeCallUI();
+        });
+
+        // WebRTC Calling Logic
+        async function startCall(isVideo) {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+                document.getElementById('call-modal').style.display = 'flex';
+
+                createPeerConnection();
+
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                socket.emit('call-user', { offer, isVideo });
+            } catch (err) {
+                alert("Camera/Microphone permission denied or not available!");
+            }
+        }
+
+        async function acceptCall() {
+            document.getElementById('incoming-call-box').style.display = 'none';
+            document.getElementById('call-modal').style.display = 'flex';
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+
+                createPeerConnection();
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(incomingOffer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                socket.emit('answer-call', { answer });
+            } catch (err) {
+                alert("Could not access media devices.");
+                endCall();
+            }
+        }
+
+        function rejectCall() {
+            document.getElementById('incoming-call-box').style.display = 'none';
+            socket.emit('end-call');
+        }
+
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            peerConnection.ontrack = (event) => {
+                document.getElementById('remote-video').srcObject = event.streams[0];
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', event.candidate);
+                }
+            };
+        }
+
+        function endCall() {
+            socket.emit('end-call');
+            closeCallUI();
+        }
+
+        function closeCallUI() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            document.getElementById('call-modal').style.display = 'none';
+            document.getElementById('incoming-call-box').style.display = 'none';
+        }
+
+        // Render Chat & Media Messages
         function renderMessage(data, isSent) {
             const div = document.createElement('div');
             div.className = `msg ${isSent ? 'sent' : ''}`;
@@ -213,12 +443,13 @@
             }
         }
 
+        // Long Press Delete Option for Local UI
         function addLongPressToDelete(element, parentMsgDiv) {
             let timer = null;
 
             const startPress = () => {
                 timer = setTimeout(() => {
-                    if (confirm("Kya aap is photo/video ko delete karna chahte hain?")) {
+                    if (confirm("Kya aap is photo/video ko UI se remove karna chahte hain?")) {
                         parentMsgDiv.remove();
                     }
                 }, 800);
@@ -237,6 +468,7 @@
             element.addEventListener('mouseleave', cancelPress);
         }
 
+        // Send Text Message
         function sendText() {
             const input = document.getElementById('msg-input');
             const text = input.value.trim();
@@ -248,13 +480,14 @@
             input.value = '';
         }
 
+        // Send Image / Video
         function sendFile() {
             const fileInput = document.getElementById('file-input');
             const file = fileInput.files[0];
             if (!file) return;
 
             if (file.size > 9 * 1024 * 1024) {
-                alert("File size must be under 9MB!");
+                alert("File size 9MB se kam honi chahiye!");
                 return;
             }
 
