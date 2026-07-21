@@ -21,7 +21,7 @@ let activeUsers = 0;
 
 // Admin Credentials
 const ADMIN_USER = "sumit@1123";
-const ADMIN_PASS = "sumit1123";
+const ADMIN_PASS = "sumit@1123";
 
 // Routes
 app.get('/', (req, res) => {
@@ -32,7 +32,7 @@ app.get('/history.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'history.html'));
 });
 
-// History Vault API
+// History Vault API (Username & Password verification)
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
@@ -55,14 +55,14 @@ io.on('connection', (socket) => {
 
     socket.broadcast.emit('status-change', { online: true, text: '🟢 Partner is Online' });
 
-    // Handles Text, Images, and Videos
+    // Handles Test, Images, and Videos
     socket.on('chat-message', (data) => {
-        const msgData = { 
+        const msgData = {
             type: data.type || 'text',
             content: data.content,
-            timestamp: new Date().toLocaleString() 
+            timestamp: new Date().toLocaleString()
         };
-        
+
         chatHistory.push(msgData);
         socket.broadcast.emit('message', msgData);
     });
@@ -79,7 +79,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('ice-candidate', (candidate) => {
-        socket.broadcast.emit('ice-candidate', candidate);
+        socket.broadcast.emit('ice-candidate', { candidate });
     });
 
     socket.on('end-call', () => {
