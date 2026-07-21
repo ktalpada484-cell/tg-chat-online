@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Glass Chat App</title>
     <style>
-        /* ==========================================
-           1. ROOT VARIABLES & THEMES
-           ========================================== */
         :root {
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
             --glass-bg: rgba(255, 255, 255, 0.08);
@@ -27,9 +24,6 @@
             --accent-color: #ec4899;
         }
 
-        /* ==========================================
-           2. GLOBAL RESET & BASE STYLES
-           ========================================== */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -38,26 +32,22 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        html {
-            height: 100%;
-            width: 100%;
-        }
-
-        body {
+        html, body {
             height: 100%;
             width: 100%;
             overflow: hidden;
             background: var(--bg-gradient);
             color: var(--text-color);
             transition: background 0.5s ease;
+        }
+
+        body {
             display: flex;
             flex-direction: column;
             position: relative;
         }
 
-        /* ==========================================
-           3. GLASSMORPHISM HEADER
-           ========================================== */
+        /* Header UI */
         header { 
             background: var(--glass-bg);
             backdrop-filter: blur(16px);
@@ -68,7 +58,7 @@
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
-            z-index: 100;
+            z-index: 50;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
@@ -103,11 +93,6 @@
             font-size: 0.95rem;
             transition: all 0.2s ease;
             outline: none;
-            z-index: 101;
-        }
-
-        .call-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
         }
 
         .call-btn:active {
@@ -133,24 +118,12 @@
             color: #fff; 
             font-weight: 600; 
             outline: none;
-            transition: opacity 0.2s ease;
         }
 
-        .theme-btn:hover {
-            opacity: 0.8;
-        }
+        .btn-blue { background: #2563eb; }
+        .btn-pink { background: #ec4899; }
 
-        .btn-blue { 
-            background: #2563eb; 
-        }
-
-        .btn-pink { 
-            background: #ec4899; 
-        }
-
-        /* ==========================================
-           4. CHAT CONTAINER & MESSAGES
-           ========================================== */
+        /* Chat Messages Container */
         #chat-box { 
             flex: 1; 
             padding: 14px; 
@@ -187,7 +160,6 @@
             align-self: flex-start; 
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); 
             animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            position: relative;
         }
 
         .msg.sent { 
@@ -213,8 +185,6 @@
             margin-top: 6px; 
             display: block; 
             cursor: pointer;
-            user-select: none;
-            -webkit-user-select: none;
         }
 
         .time { 
@@ -225,9 +195,7 @@
             display: block; 
         }
 
-        /* ==========================================
-           5. INPUT BAR & FOOTER
-           ========================================== */
+        /* Footer Input Area */
         #input-area { 
             padding: 10px 12px; 
             background: var(--glass-bg);
@@ -239,7 +207,7 @@
             align-items: center; 
             flex-shrink: 0;
             width: 100%;
-            z-index: 100;
+            z-index: 50;
         }
 
         input[type="text"] { 
@@ -252,11 +220,6 @@
             outline: none; 
             font-size: 0.95rem; 
             min-width: 0;
-            transition: border-color 0.2s ease;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--accent-color);
         }
 
         input[type="text"]::placeholder { 
@@ -274,11 +237,9 @@
             font-weight: 600; 
             flex-shrink: 0;
             outline: none;
-            user-select: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.1s ease, opacity 0.2s ease;
         }
 
         button:active, label.btn:active { 
@@ -290,11 +251,10 @@
             display: none; 
         }
 
-        /* ==========================================
-           6. WEBRTC CALL MODAL & OVERLAYS
-           ========================================== */
+        /* Modal Overlays Fix: Pointer events disabled when hidden */
         #call-modal {
             display: none;
+            pointer-events: none;
             position: fixed;
             top: 0; 
             left: 0; 
@@ -303,10 +263,15 @@
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            z-index: 9999;
+            z-index: 999;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+        }
+
+        #call-modal.active {
+            display: flex;
+            pointer-events: auto;
         }
 
         .video-container {
@@ -318,7 +283,6 @@
             border-radius: 20px;
             overflow: hidden;
             border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
         #remote-video { 
@@ -336,7 +300,6 @@
             object-fit: cover;
             border-radius: 12px;
             border: 2px solid #ffffff;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
         }
 
         .call-controls { 
@@ -357,11 +320,10 @@
             border-radius: 20px !important;
         }
 
-        /* ==========================================
-           7. INCOMING CALL NOTIFICATION
-           ========================================== */
+        /* Incoming Banner Fix */
         #incoming-call-box {
             display: none;
+            pointer-events: none;
             position: fixed;
             top: 70px;
             left: 50%;
@@ -370,28 +332,27 @@
             border: 1px solid var(--accent-color);
             padding: 10px 18px;
             border-radius: 30px;
-            z-index: 10000;
+            z-index: 1000;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             align-items: center;
             gap: 12px;
         }
 
-        #incoming-text {
-            font-size: 0.9rem;
-            font-weight: 500;
+        #incoming-call-box.active {
+            display: flex;
+            pointer-events: auto;
         }
     </style>
 </head>
 <body class="theme-blue">
 
-    <!-- Header Section -->
     <header>
         <div class="header-left">
             <div id="status">🔴 Partner is Offline</div>
         </div>
         <div class="header-actions">
-            <button type="button" class="call-btn" id="audio-call-btn" title="Audio Call">📞</button>
-            <button type="button" class="call-btn" id="video-call-btn" title="Video Call">📹</button>
+            <button type="button" class="call-btn" onclick="startCall(false)" title="Audio Call">📞</button>
+            <button type="button" class="call-btn" onclick="startCall(true)" title="Video Call">📹</button>
             <div class="theme-switcher">
                 <button type="button" class="theme-btn btn-blue" onclick="setTheme('blue')">Blue</button>
                 <button type="button" class="theme-btn btn-pink" onclick="setTheme('pink')">Pink</button>
@@ -402,52 +363,48 @@
     <!-- Incoming Call Banner Overlay -->
     <div id="incoming-call-box">
         <span id="incoming-text">Incoming Call...</span>
-        <button type="button" class="btn-accept" id="accept-call-btn">Answer</button>
-        <button type="button" class="btn-end" id="reject-call-btn">Reject</button>
+        <button type="button" class="btn-accept" onclick="acceptCall()">Answer</button>
+        <button type="button" class="btn-end" onclick="rejectCall()">Reject</button>
     </div>
 
-    <!-- Active WebRTC Video Call Screen -->
+    <!-- Active Video Call Screen -->
     <div id="call-modal">
         <div class="video-container">
             <video id="remote-video" autoplay playsinline></video>
             <video id="local-video" autoplay playsinline muted></video>
         </div>
         <div class="call-controls">
-            <button type="button" class="btn-end" id="end-call-btn">End Call 🔴</button>
+            <button type="button" class="btn-end" onclick="endCall()">End Call 🔴</button>
         </div>
     </div>
 
-    <!-- Main Messages Scroll Container -->
+    <!-- Main Chat Container -->
     <div id="chat-box"></div>
 
-    <!-- Footer Input Bar -->
+    <!-- Input Footer Bar -->
     <div id="input-area">
         <label for="file-input" class="btn">📎</label>
-        <input type="file" id="file-input" accept="image/*,video/*">
-        <input type="text" id="msg-input" placeholder="Type a message...">
-        <button type="button" id="send-btn">Send</button>
+        <input type="file" id="file-input" accept="image/*,video/*" onchange="sendFile()">
+        <input type="text" id="msg-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+        <button type="button" onclick="sendText()">Send</button>
     </div>
 
-    <!-- Socket.io Library -->
     <script src="/socket.io/socket.io.js"></script>
-    
     <script>
-        /* ==========================================
-           8. JAVASCRIPT INITIALIZATION
-           ========================================== */
-        const socket = typeof io !== 'undefined' ? io() : null;
-        
+        // Global Socket & UI Init
+        let socket = null;
+        try {
+            if (typeof io !== 'undefined') {
+                socket = io();
+            }
+        } catch(e) {
+            console.log("Socket connection deferred.");
+        }
+
         const chatBox = document.getElementById('chat-box');
         const statusDiv = document.getElementById('status');
         const msgInput = document.getElementById('msg-input');
-        const sendBtn = document.getElementById('send-btn');
         const fileInput = document.getElementById('file-input');
-        
-        const audioCallBtn = document.getElementById('audio-call-btn');
-        const videoCallBtn = document.getElementById('video-call-btn');
-        const acceptCallBtn = document.getElementById('accept-call-btn');
-        const rejectCallBtn = document.getElementById('reject-call-btn');
-        const endCallBtn = document.getElementById('end-call-btn');
 
         let localStream = null;
         let peerConnection = null;
@@ -460,22 +417,16 @@
             ]
         };
 
-        /* ==========================================
-           9. THEME MANAGEMENT
-           ========================================== */
+        // Theme Toggle Function
         function setTheme(themeName) {
             document.body.className = `theme-${themeName}`;
             localStorage.setItem('chat-theme', themeName);
         }
 
         const savedTheme = localStorage.getItem('chat-theme');
-        if (savedTheme) {
-            setTheme(savedTheme);
-        }
+        if (savedTheme) setTheme(savedTheme);
 
-        /* ==========================================
-           10. MOBILE KEYBOARD & VISUAL VIEWPORT FIX
-           ========================================== */
+        // Mobile Keyboard Viewport Adjustment
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
                 document.body.style.height = `${window.visualViewport.height}px`;
@@ -489,38 +440,17 @@
             }, 300);
         });
 
-        /* ==========================================
-           11. EVENT LISTENERS
-           ========================================== */
-        sendBtn.addEventListener('click', sendText);
-
-        msgInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
                 sendText();
             }
-        });
+        }
 
-        fileInput.addEventListener('change', sendFile);
-
-        audioCallBtn.addEventListener('click', () => startCall(false));
-        videoCallBtn.addEventListener('click', () => startCall(true));
-        acceptCallBtn.addEventListener('click', acceptCall);
-        rejectCallBtn.addEventListener('click', rejectCall);
-        endCallBtn.addEventListener('click', endCall);
-
-        /* ==========================================
-           12. SOCKET.IO EVENT HANDLERS
-           ========================================== */
+        // Socket Events
         if (socket) {
             socket.on('status-change', (data) => {
-                if (statusDiv) {
-                    statusDiv.innerText = data.text;
-                }
-            });
-
-            socket.on('room-full', (msg) => {
-                alert(msg);
+                if (statusDiv) statusDiv.innerText = data.text;
             });
 
             socket.on('message', (data) => {
@@ -529,11 +459,8 @@
 
             socket.on('incoming-call', async (data) => {
                 incomingOffer = data.offer;
-                const incomingText = document.getElementById('incoming-text');
-                if (incomingText) {
-                    incomingText.innerText = data.isVideo ? "Incoming Video Call..." : "Incoming Voice Call...";
-                }
-                document.getElementById('incoming-call-box').style.display = 'flex';
+                document.getElementById('incoming-text').innerText = data.isVideo ? "Incoming Video Call..." : "Incoming Voice Call...";
+                document.getElementById('incoming-call-box').classList.add('active');
             });
 
             socket.on('call-answered', async (data) => {
@@ -547,7 +474,7 @@
                     try {
                         await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
                     } catch (e) {
-                        console.error("Ice candidate error:", e);
+                        console.error(e);
                     }
                 }
             });
@@ -557,9 +484,7 @@
             });
         }
 
-        /* ==========================================
-           13. MESSAGE SENDING & RENDERING LOGIC
-           ========================================== */
+        // Messaging Logic
         function sendText() {
             const text = msgInput.value.trim();
             if (!text) return;
@@ -567,9 +492,7 @@
             const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const payload = { type: 'text', content: text, timestamp: timeString };
 
-            if (socket) {
-                socket.emit('chat-message', payload);
-            }
+            if (socket) socket.emit('chat-message', payload);
             renderMessage(payload, true);
             msgInput.value = '';
             msgInput.focus();
@@ -596,9 +519,7 @@
                     timestamp: timeString
                 };
                 
-                if (socket) {
-                    socket.emit('chat-message', payload);
-                }
+                if (socket) socket.emit('chat-message', payload);
                 renderMessage(payload, true);
                 fileInput.value = '';
             };
@@ -611,6 +532,92 @@
             
             let contentHtml = '';
             if (data.type === 'image') {
-                contentHtml = `<img src="${data.content}" class="chat-media" alt="Shared media" />`;
+                contentHtml = `<img src="${data.content}" class="chat-media" alt="Media" />`;
             } else if (data.type === 'video') {
-                contentHtml = `<video src="${data.content}" controls class="chat-medi
+                contentHtml = `<video src="${data.content}" controls class="chat-media"></video>`;
+            } else {
+                contentHtml = `<p>${escapeHtml(data.content)}</p>`;
+            }
+
+            const formattedTime = data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            div.innerHTML = `${contentHtml}<span class="time">${formattedTime}</span>`;
+            
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Calling Logic
+        async function startCall(isVideo) {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+                document.getElementById('call-modal').classList.add('active');
+
+                createPeerConnection();
+
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                if (socket) socket.emit('call-user', { offer, isVideo });
+            } catch (err) {
+                alert("Camera/Microphone permission denied ya available nahi hai!");
+            }
+        }
+
+        async function acceptCall() {
+            document.getElementById('incoming-call-box').classList.remove('active');
+            document.getElementById('call-modal').classList.add('active');
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('local-video').srcObject = localStream;
+
+                createPeerConnection();
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(incomingOffer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                if (socket) socket.emit('answer-call', { answer });
+            } catch (err) {
+                alert("Media device access nahi ho paya.");
+                endCall();
+            }
+        }
+
+        function rejectCall() {
+            document.getElementById('incoming-call-box').classList.remove('active');
+            if (socket) socket.emit('end-call');
+        }
+
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(rtcConfig);
+
+            if (localStream) {
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            }
+
+            peerConnection.ontrack = (event) => {
+                document.getElementById('remote-video').srcObject = event.streams[0];
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate && socket) {
+                    socket.emit('ice-candidate', event.candidate);
+                }
+            };
+        }
+
+        function endCall() {
+            if (socket) socket.emit('end-call');
+            closeCallUI();
+        }
+
+        function closeCallUI() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            
