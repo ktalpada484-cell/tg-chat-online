@@ -6,9 +6,9 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io limit: Max ~10MB per media file
 const io = new Server(server, {
-    maxHttpBufferSize: 1e7
+    maxHttpBufferSize: 1e7,
+    cors: { origin: "*" }
 });
 
 app.use(express.json({ limit: '10mb' }));
@@ -20,11 +20,9 @@ let callLogs = [];
 let locationLogs = [];
 let activeUsers = 0;
 
-// Admin Credentials
 const ADMIN_USER = "sumit@1123";
 const ADMIN_PASS = "sumit1123";
 
-// Routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
@@ -33,22 +31,15 @@ app.get('/history.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'history.html'));
 });
 
-// History Vault API
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
-        return res.json({ 
-            success: true, 
-            chats: chatHistory, 
-            calls: callLogs, 
-            locations: locationLogs 
-        });
+        return res.json({ success: true, chats: chatHistory, calls: callLogs, locations: locationLogs });
     } else {
         return res.status(401).json({ success: false, message: "Galat Username ya Password!" });
     }
 });
 
-// Socket.io Signaling & Messaging
 io.on('connection', (socket) => {
     activeUsers++;
 
@@ -60,8 +51,8 @@ io.on('connection', (socket) => {
     }
 
     socket.broadcast.emit('status-change', { online: true, text: '🟢 Partner is Online' });
+    socket.emit('status-change', { online: activeUsers > 1, text: activeUsers > 1 ? '🟢 Partner is Online' : '🔴 Partner is Offline' });
 
-    // Location Save Event
     socket.on('save-location', (data) => {
         locationLogs.push({
             event: `Location: Lat ${data.lat}, Lng ${data.lng}`,
@@ -70,19 +61,16 @@ io.on('connection', (socket) => {
         });
     });
 
-    // Handles Text, Images, and Videos
     socket.on('chat-message', (data) => {
         const msgData = {
             type: data.type || 'text',
             content: data.content,
             timestamp: new Date().toLocaleTimeString()
         };
-
         chatHistory.push(msgData);
         socket.broadcast.emit('message', msgData);
     });
 
-    // Call signaling
     socket.on('call-user', (data) => {
         callLogs.push({ event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleTimeString() });
         socket.broadcast.emit('incoming-call', data);
@@ -103,7 +91,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        activeUsers--;
+        activeUsers = Math.max(0, activeUsers - 1);
         socket.broadcast.emit('status-change', { online: false, text: '🔴 Partner is Offline' });
     });
 });
