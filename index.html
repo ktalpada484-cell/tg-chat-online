@@ -26,9 +26,9 @@
         }
 
         .header-actions { display: flex; align-items: center; gap: 8px; }
-        .call-btn, .nav-btn {
+        .call-btn {
             background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border);
-            color: white; padding: 8px 12px; border-radius: 20px; cursor: pointer; text-decoration: none; font-size: 0.85rem;
+            color: white; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 0.85rem;
         }
 
         #chat-box { 
@@ -96,7 +96,6 @@
     <header>
         <div id="status">🟣 Purple Blur Active</div>
         <div class="header-actions">
-            <a href="/history.html" class="nav-btn">📜 History</a>
             <button class="call-btn" onclick="startCall(false)">📞</button>
             <button class="call-btn" onclick="startCall(true)">📹</button>
         </div>
@@ -140,58 +139,30 @@
         let peerConnection = null;
         let incomingOffer = null;
 
-        // Better STUN Config for Render WebRTC
         const rtcConfig = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
+                { urls: 'stun:stun1.l.google.com:19302' }
             ]
         };
-
-        // Local Storage Helper
-        function saveToHistory(item) {
-            let history = JSON.parse(localStorage.getItem('app_chat_history') || '[]');
-            history.push(item);
-            localStorage.setItem('app_chat_history', JSON.stringify(history));
-        }
-
-        // Load Old Local History on Startup
-        function loadLocalHistory() {
-            let history = JSON.parse(localStorage.getItem('app_chat_history') || '[]');
-            history.forEach(item => {
-                if (item.category === 'chat') {
-                    renderMessage(item.data, item.isSent, false);
-                }
-            });
-        }
-        loadLocalHistory();
 
         function handleKeyPress(e) { if (e.key === 'Enter') sendText(); }
 
         if (socket) {
-            socket.on('message', (data) => {
-                renderMessage(data, false, true);
-            });
-
+            socket.on('message', (data) => renderMessage(data, false));
             socket.on('incoming-call', (data) => {
                 incomingOffer = data.offer;
                 document.getElementById('incoming-text').innerText = data.isVideo ? "Incoming Video Call..." : "Incoming Voice Call...";
                 document.getElementById('incoming-call-box').classList.add('active');
             });
-
             socket.on('call-answered', async (data) => {
-                if (peerConnection) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-                }
+                if (peerConnection) await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
             });
-
             socket.on('ice-candidate', async (data) => {
                 if (peerConnection && data.candidate) {
                     try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch (e) {}
                 }
             });
-
             socket.on('call-ended', () => closeCallUI());
         }
 
@@ -202,7 +173,7 @@
             const payload = { type: 'text', content: text, timestamp: timeString };
 
             if (socket) socket.emit('chat-message', payload);
-            renderMessage(payload, true, true);
+            renderMessage(payload, true);
             msgInput.value = '';
         }
 
@@ -217,13 +188,13 @@
                 const payload = { type: isImage ? 'image' : 'video', content: e.target.result, timestamp: timeString };
 
                 if (socket) socket.emit('chat-message', payload);
-                renderMessage(payload, true, true);
+                renderMessage(payload, true);
                 fileInput.value = '';
             };
             reader.readAsDataURL(file);
         }
 
-        function renderMessage(data, isSent, isNew = true) {
+        function renderMessage(data, isSent) {
             const div = document.createElement('div');
             div.className = `msg ${isSent ? 'sent' : ''}`;
             
@@ -239,10 +210,6 @@
             div.innerHTML = `${contentHtml}<span class="time">${data.timestamp}</span>`;
             chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
-
-            if (isNew) {
-                saveToHistory({ category: 'chat', data: data, isSent: isSent, date: new Date().toLocaleString() });
-            }
         }
 
         async function startCall(isVideo) {
@@ -256,7 +223,6 @@
                 await peerConnection.setLocalDescription(offer);
 
                 if (socket) socket.emit('call-user', { offer, isVideo });
-                saveToHistory({ category: 'call', type: isVideo ? 'Video Call (Outgoing)' : 'Voice Call (Outgoing)', date: new Date().toLocaleString() });
             } catch (err) {
                 alert("Camera/Mic access Error!");
             }
@@ -276,7 +242,6 @@
                 await peerConnection.setLocalDescription(answer);
 
                 if (socket) socket.emit('answer-call', { answer });
-                saveToHistory({ category: 'call', type: 'Incoming Call (Accepted)', date: new Date().toLocaleString() });
             } catch (err) {
                 endCall();
             }
@@ -285,7 +250,6 @@
         function rejectCall() {
             document.getElementById('incoming-call-box').classList.remove('active');
             if (socket) socket.emit('end-call');
-            saveToHistory({ category: 'call', type: 'Incoming Call (Rejected)', date: new Date().toLocaleString() });
         }
 
         function createPeerConnection() {
