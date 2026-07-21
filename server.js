@@ -1,23 +1,31 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.json());
-app.use(express.static('public'));
+
+// FIXED: Ab ye root folder se index.html aur history.html serve karega
+app.use(express.static(__dirname));
 
 let chatHistory = [];
 let callLogs = [];
 let activeUsers = 0;
 
-// Aapke bataye hue credentials
+// Credentials
 const ADMIN_USER = "sumit@1123";
 const ADMIN_PASS = "sumit1123";
 
-// Secure API Route for History Vault
+// Route for homepage
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Secure API Route for History
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
@@ -27,8 +35,10 @@ app.post('/api/history', (req, res) => {
     }
 });
 
+// Socket.io Connection Logic
 io.on('connection', (socket) => {
     activeUsers++;
+
     if (activeUsers > 2) {
         socket.emit('room-full', 'Room is full. Max 2 users allowed.');
         socket.disconnect();
