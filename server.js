@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,13 +16,50 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(express.static(__dirname));
 
-let chatHistory = [];
-let callLogs = [];
-let locationLogs = [];
-let activeUsers = 0;
-
 const ADMIN_USER = "sumit@1123";
 const ADMIN_PASS = "sumit1123";
+
+// Data file path
+const DATA_FILE = path.join(__dirname, 'history.json');
+
+// Load data or initialize empty arrays
+let dbData = { chatHistory: [], callLogs: [], locationLogs: [] };
+
+function loadData() {
+    if (fs.existsSync(DATA_FILE)) {
+        try {
+            const rawData = fs.readFileSync(DATA_FILE);
+            dbData = JSON.parse(rawData);
+            cleanupOldData(); // Check and remove data older than 30 days
+        } catch (e) {
+            dbData = { chatHistory: [], callLogs: [], locationLogs: [] };
+        }
+    }
+}
+
+function saveData() {
+    try {
+        fs.writeFileSync(DATA_FILE, JSON.stringify(dbData, null, 2));
+    } catch (e) {
+        console.error("Error saving data:", e);
+    }
+}
+
+// 30 Days Auto-Delete Logic
+function cleanupOldData() {
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    
+    dbData.chatHistory = dbData.chatHistory.filter(item => new Date(item.rawTimestamp || item.timestamp).getTime() > thirtyDaysAgo);
+    dbData.callLogs = dbData.callLogs.filter(item => new Date(item.rawTimestamp || item.timestamp).getTime() > thirtyDaysAgo);
+    dbData.locationLogs = dbData.locationLogs.filter(item => new Date(item.rawTimestamp || item.timestamp).getTime() > thirtyDaysAgo);
+    
+    saveData();
+}
+
+// Load existing data on startup
+loadData();
+
+let activeUsers = 0;
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -34,7 +72,13 @@ app.get('/history.html', (req, res) => {
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
-        return res.json({ success: true, chats: chatHistory, calls: callLogs, locations: locationLogs });
+        loadData(); // Fresh data load karo
+        return res.json({ 
+            success: true, 
+            chats: dbData.chatHistory, 
+            calls: dbData.callLogs, 
+            locations: dbData.locationLogs 
+        });
     } else {
         return res.status(401).json({ success: false, message: "Galat Username ya Password!" });
     }
@@ -54,30 +98,38 @@ io.on('connection', (socket) => {
     socket.emit('status-change', { online: activeUsers > 1, text: activeUsers > 1 ? '🟢 Partner is Online' : '🔴 Partner is Offline' });
 
     socket.on('save-location', (data) => {
-        locationLogs.push({
+        dbData.locationLogs.push({
             event: `Location: Lat ${data.lat}, Lng ${data.lng}`,
             mapLink: `https://www.google.com/maps?q=${data.lat},${data.lng}`,
-            timestamp: new Date().toLocaleTimeString()
+            timestamp: new Date().toLocaleTimeString(),
+            rawTimestamp: new Date().toISOString()
         });
+        saveData();
     });
 
     socket.on('chat-message', (data) => {
         const msgData = {
             type: data.type || 'text',
             content: data.content,
-            timestamp: new Date().toLocaleTimeString()
+            timestamp: new Date().toLocaleTimeString(),
+            rawTimestamp: new Date().toISOString()
         };
-        chatHistory.push(msgData);
+        dbData.chatHistory.push(msgData);
+        saveData();
         socket.broadcast.emit('message', msgData);
     });
 
     socket.on('call-user', (data) => {
-        callLogs.push({ event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleTimeString() });
+        const log = { event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
+        dbData.callLogs.push(log);
+        saveData();
         socket.broadcast.emit('incoming-call', data);
     });
 
     socket.on('answer-call', (data) => {
-        callLogs.push({ event: 'Call Connected', timestamp: new Date().toLocaleTimeString() });
+        const log = { event: 'Call Connected', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
+        dbData.callLogs.push(log);
+        saveData();
         socket.broadcast.emit('call-answered', data);
     });
 
@@ -86,7 +138,9 @@ io.on('connection', (socket) => {
     });
 
     socket.on('end-call', () => {
-        callLogs.push({ event: 'Call Ended', timestamp: new Date().toLocaleTimeString() });
+        const log = { event: 'Call Ended', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
+        dbData.callLogs.push(log);
+        saveData();
         socket.broadcast.emit('call-ended');
     });
 
@@ -100,3 +154,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+        
