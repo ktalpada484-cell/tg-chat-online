@@ -2,29 +2,155 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TG Chat Online</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #121212; color: #fff; display: flex; flex-direction: column; height: 100vh; }
-        header { background: #1f1f1f; padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #333; }
-        #status { font-size: 0.9rem; color: #aaa; margin-top: 5px; }
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .msg { background: #262626; padding: 10px; border-radius: 8px; max-width: 80%; word-break: break-word; }
-        .msg.sent { align-self: flex-end; background: #007bff; }
-        .msg img, .msg video { max-width: 100%; border-radius: 6px; margin-top: 5px; display: block; }
-        .time { font-size: 0.7rem; color: #ddd; text-align: right; margin-top: 4px; display: block; }
-        #input-area { padding: 10px; background: #1f1f1f; display: flex; gap: 8px; align-items: center; }
-        input[type="text"] { flex: 1; padding: 10px; border-radius: 20px; border: none; background: #333; color: #fff; outline: none; }
-        button, label.btn { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; }
+        :root {
+            --bg-color: #0d1117;
+            --header-bg: #161b22;
+            --msg-sent-bg: #007bff;
+            --accent-color: #007bff;
+            --text-color: #ffffff;
+            --card-bg: #21262d;
+        }
+
+        /* Pink Theme Class */
+        body.theme-pink {
+            --bg-color: #1a0914;
+            --header-bg: #2d0d22;
+            --msg-sent-bg: #e83e8c;
+            --accent-color: #e83e8c;
+            --text-color: #ffffff;
+            --card-bg: #3b142d;
+        }
+
+        /* Blue Theme Class */
+        body.theme-blue {
+            --bg-color: #0d1117;
+            --header-bg: #161b22;
+            --msg-sent-bg: #007bff;
+            --accent-color: #007bff;
+            --text-color: #ffffff;
+            --card-bg: #21262d;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden; /* Page ko extra scroll hone se rokne ke liye */
+            background: var(--bg-color);
+            color: var(--text-color);
+            transition: background 0.3s ease;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header { 
+            background: var(--header-bg); 
+            padding: 10px 15px; 
+            text-align: center; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1); 
+            flex-shrink: 0;
+        }
+        header h1 { font-size: 1.1rem; font-weight: 600; }
+        #status { font-size: 0.8rem; color: #aaa; margin-top: 2px; }
+
+        /* Theme Buttons */
+        .theme-switcher { display: flex; justify-content: center; gap: 10px; margin-top: 6px; }
+        .theme-btn { border: none; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; color: #fff; font-weight: bold; }
+        .btn-blue { background: #007bff; }
+        .btn-pink { background: #e83e8c; }
+
+        #chat-box { 
+            flex: 1; 
+            padding: 15px; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            width: 100%;
+        }
+        
+        .msg { 
+            background: var(--card-bg); 
+            padding: 10px 12px; 
+            border-radius: 12px; 
+            max-width: 75%; 
+            word-break: break-word; 
+            align-self: flex-start; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
+        .msg.sent { align-self: flex-end; background: var(--msg-sent-bg); }
+        
+        /* Media Sizing Fixes */
+        .msg img, .msg video { 
+            max-width: 100%; 
+            max-height: 220px; 
+            width: auto;
+            height: auto;
+            object-fit: contain; 
+            border-radius: 8px; 
+            margin-top: 6px; 
+            display: block; 
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.7); text-align: right; margin-top: 4px; display: block; }
+        
+        #input-area { 
+            padding: 10px; 
+            background: var(--header-bg); 
+            display: flex; 
+            gap: 8px; 
+            align-items: center; 
+            border-top: 1px solid rgba(255, 255, 255, 0.1); 
+            flex-shrink: 0;
+            width: 100%;
+        }
+        input[type="text"] { 
+            flex: 1; 
+            padding: 10px 15px; 
+            border-radius: 20px; 
+            border: none; 
+            background: rgba(255, 255, 255, 0.1); 
+            color: #fff; 
+            outline: none; 
+            font-size: 0.95rem; 
+            min-width: 0;
+        }
+        button, label.btn { 
+            background: var(--accent-color); 
+            color: white; 
+            border: none; 
+            padding: 10px 16px; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-weight: 500; 
+            flex-shrink: 0;
+        }
+        button:active, label.btn:active { opacity: 0.8; }
         input[type="file"] { display: none; }
     </style>
 </head>
-<body>
+<body class="theme-blue">
 
     <header>
-        TG Chat Online
+        <h1>TG Chat Online</h1>
         <div id="status">🔴 Partner is Offline</div>
+        <div class="theme-switcher">
+            <button class="theme-btn btn-blue" onclick="setTheme('blue')">Blue</button>
+            <button class="theme-btn btn-pink" onclick="setTheme('pink')">Pink</button>
+        </div>
     </header>
 
     <div id="chat-box"></div>
@@ -41,6 +167,16 @@
         const socket = io();
         const chatBox = document.getElementById('chat-box');
         const statusDiv = document.getElementById('status');
+
+        function setTheme(themeName) {
+            document.body.className = `theme-${themeName}`;
+            localStorage.setItem('chat-theme', themeName);
+        }
+
+        const savedTheme = localStorage.getItem('chat-theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        }
 
         socket.on('status-change', (data) => {
             statusDiv.innerText = data.text;
@@ -60,9 +196,9 @@
             
             let contentHtml = '';
             if (data.type === 'image') {
-                contentHtml = `<img src="${data.content}" />`;
+                contentHtml = `<img src="${data.content}" class="chat-media" />`;
             } else if (data.type === 'video') {
-                contentHtml = `<video src="${data.content}" controls></video>`;
+                contentHtml = `<video src="${data.content}" controls class="chat-media"></video>`;
             } else {
                 contentHtml = `<p>${escapeHtml(data.content)}</p>`;
             }
@@ -70,6 +206,35 @@
             div.innerHTML = `${contentHtml}<span class="time">${data.timestamp || new Date().toLocaleTimeString()}</span>`;
             chatBox.appendChild(div);
             chatBox.scrollTop = chatBox.scrollHeight;
+
+            const mediaElement = div.querySelector('.chat-media');
+            if (mediaElement) {
+                addLongPressToDelete(mediaElement, div);
+            }
+        }
+
+        function addLongPressToDelete(element, parentMsgDiv) {
+            let timer = null;
+
+            const startPress = () => {
+                timer = setTimeout(() => {
+                    if (confirm("Kya aap is photo/video ko delete karna chahte hain?")) {
+                        parentMsgDiv.remove();
+                    }
+                }, 800);
+            };
+
+            const cancelPress = () => {
+                if (timer) clearTimeout(timer);
+            };
+
+            element.addEventListener('touchstart', startPress);
+            element.addEventListener('touchend', cancelPress);
+            element.addEventListener('touchmove', cancelPress);
+
+            element.addEventListener('mousedown', startPress);
+            element.addEventListener('mouseup', cancelPress);
+            element.addEventListener('mouseleave', cancelPress);
         }
 
         function sendText() {
