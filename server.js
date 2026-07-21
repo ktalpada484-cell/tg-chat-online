@@ -17,6 +17,7 @@ app.use(express.static(__dirname));
 
 let chatHistory = [];
 let callLogs = [];
+let locationLogs = [];
 let activeUsers = 0;
 
 // Admin Credentials
@@ -32,11 +33,16 @@ app.get('/history.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'history.html'));
 });
 
-// History Vault API (Username & Password verification)
+// History Vault API
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
-        return res.json({ success: true, chats: chatHistory, calls: callLogs });
+        return res.json({ 
+            success: true, 
+            chats: chatHistory, 
+            calls: callLogs, 
+            locations: locationLogs 
+        });
     } else {
         return res.status(401).json({ success: false, message: "Galat Username ya Password!" });
     }
@@ -54,6 +60,15 @@ io.on('connection', (socket) => {
     }
 
     socket.broadcast.emit('status-change', { online: true, text: '🟢 Partner is Online' });
+
+    // Location Save Event
+    socket.on('save-location', (data) => {
+        locationLogs.push({
+            event: `Location: Lat ${data.lat}, Lng ${data.lng}`,
+            mapLink: `https://www.google.com/maps?q=${data.lat},${data.lng}`,
+            timestamp: new Date().toLocaleTimeString()
+        });
+    });
 
     // Handles Text, Images, and Videos
     socket.on('chat-message', (data) => {
