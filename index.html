@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Glass Chat App</title>
     <style>
+        /* ==========================================
+           1. ROOT VARIABLES & THEMES
+           ========================================== */
         :root {
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-bg: rgba(255, 255, 255, 0.08);
             --glass-border: rgba(255, 255, 255, 0.15);
-            --glass-card: rgba(255, 255, 255, 0.1);
+            --glass-card: rgba(255, 255, 255, 0.12);
             --msg-sent: linear-gradient(135deg, #2563eb, #1d4ed8);
             --accent-color: #3b82f6;
             --text-color: #ffffff;
@@ -17,18 +20,22 @@
 
         body.theme-pink {
             --bg-gradient: linear-gradient(135deg, #2e1065 0%, #701a75 50%, #4c0519 100%);
-            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(255, 255, 255, 0.1);
             --glass-border: rgba(255, 255, 255, 0.2);
-            --glass-card: rgba(255, 255, 255, 0.12);
+            --glass-card: rgba(255, 255, 255, 0.15);
             --msg-sent: linear-gradient(135deg, #ec4899, #be185d);
             --accent-color: #ec4899;
         }
 
+        /* ==========================================
+           2. GLOBAL RESET & BASE STYLES
+           ========================================== */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html {
@@ -37,8 +44,7 @@
         }
 
         body {
-            height: 100vh;
-            height: 100dvh;
+            height: 100%;
             width: 100%;
             overflow: hidden;
             background: var(--bg-gradient);
@@ -46,25 +52,23 @@
             transition: background 0.5s ease;
             display: flex;
             flex-direction: column;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: relative;
         }
 
-        /* Glassmorphism Header */
+        /* ==========================================
+           3. GLASSMORPHISM HEADER
+           ========================================== */
         header { 
             background: var(--glass-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--glass-border);
-            padding: 12px 16px; 
+            padding: 10px 14px; 
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
-            z-index: 10;
+            z-index: 100;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
@@ -86,33 +90,34 @@
         .header-actions { 
             display: flex; 
             align-items: center; 
-            gap: 10px; 
+            gap: 8px; 
         }
 
         .call-btn {
             background: rgba(255, 255, 255, 0.15);
             border: 1px solid var(--glass-border);
             color: white;
-            padding: 8px 14px;
+            padding: 6px 12px;
             border-radius: 20px;
             cursor: pointer;
             font-size: 0.95rem;
             transition: all 0.2s ease;
             outline: none;
+            z-index: 101;
         }
 
-        .call-btn:hover { 
-            background: rgba(255, 255, 255, 0.25); 
-            transform: scale(1.05); 
+        .call-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
         }
 
         .call-btn:active {
-            transform: scale(0.95);
+            transform: scale(0.92);
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .theme-switcher { 
             display: flex; 
-            gap: 6px; 
+            gap: 4px; 
             background: rgba(0, 0, 0, 0.2);
             padding: 3px;
             border-radius: 16px;
@@ -121,13 +126,18 @@
 
         .theme-btn { 
             border: none; 
-            padding: 5px 12px; 
+            padding: 5px 10px; 
             border-radius: 12px; 
             font-size: 0.75rem; 
             cursor: pointer; 
             color: #fff; 
             font-weight: 600; 
-            transition: all 0.2s ease;
+            outline: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .theme-btn:hover {
+            opacity: 0.8;
         }
 
         .btn-blue { 
@@ -138,19 +148,17 @@
             background: #ec4899; 
         }
 
-        .theme-btn:hover {
-            opacity: 0.9;
-        }
-
-        /* Chat Container & Scroll Fix */
+        /* ==========================================
+           4. CHAT CONTAINER & MESSAGES
+           ========================================== */
         #chat-box { 
             flex: 1; 
-            padding: 16px; 
+            padding: 14px; 
             overflow-y: auto; 
             overflow-x: hidden;
             display: flex; 
             flex-direction: column; 
-            gap: 14px; 
+            gap: 12px; 
             width: 100%;
             -webkit-overflow-scrolling: touch;
         }
@@ -158,7 +166,7 @@
         @keyframes slideUp {
             from { 
                 opacity: 0; 
-                transform: translateY(15px) scale(0.96); 
+                transform: translateY(12px) scale(0.96); 
             }
             to { 
                 opacity: 1; 
@@ -171,14 +179,14 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--glass-border);
-            padding: 12px 16px; 
+            padding: 10px 14px; 
             border-radius: 18px; 
             border-bottom-left-radius: 4px;
             max-width: 80%; 
             word-break: break-word; 
             align-self: flex-start; 
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15); 
-            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             position: relative;
         }
 
@@ -197,12 +205,12 @@
 
         .msg img, .msg video { 
             max-width: 100%; 
-            max-height: 250px; 
+            max-height: 240px; 
             width: auto;
             height: auto;
             object-fit: contain; 
             border-radius: 12px; 
-            margin-top: 8px; 
+            margin-top: 6px; 
             display: block; 
             cursor: pointer;
             user-select: none;
@@ -213,31 +221,33 @@
             font-size: 0.65rem; 
             color: rgba(255, 255, 255, 0.75); 
             text-align: right; 
-            margin-top: 6px; 
+            margin-top: 4px; 
             display: block; 
         }
 
-        /* Input Area Fixes */
+        /* ==========================================
+           5. INPUT BAR & FOOTER
+           ========================================== */
         #input-area { 
-            padding: 12px 14px; 
+            padding: 10px 12px; 
             background: var(--glass-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border-top: 1px solid var(--glass-border);
             display: flex; 
-            gap: 10px; 
+            gap: 8px; 
             align-items: center; 
             flex-shrink: 0;
             width: 100%;
-            z-index: 20;
+            z-index: 100;
         }
 
         input[type="text"] { 
             flex: 1; 
-            padding: 12px 18px; 
+            padding: 10px 16px; 
             border-radius: 24px; 
             border: 1px solid var(--glass-border); 
-            background: rgba(0, 0, 0, 0.25); 
+            background: rgba(0, 0, 0, 0.3); 
             color: #ffffff; 
             outline: none; 
             font-size: 0.95rem; 
@@ -257,16 +267,18 @@
             background: var(--accent-color); 
             color: white; 
             border: none; 
-            padding: 12px 18px; 
+            padding: 10px 16px; 
             border-radius: 24px; 
             cursor: pointer; 
-            font-size: 0.95rem; 
+            font-size: 0.9rem; 
             font-weight: 600; 
             flex-shrink: 0;
-            transition: opacity 0.2s, transform 0.1s;
+            outline: none;
+            user-select: none;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: transform 0.1s ease, opacity 0.2s ease;
         }
 
         button:active, label.btn:active { 
@@ -278,7 +290,9 @@
             display: none; 
         }
 
-        /* Video Call Modal Overlay */
+        /* ==========================================
+           6. WEBRTC CALL MODAL & OVERLAYS
+           ========================================== */
         #call-modal {
             display: none;
             position: fixed;
@@ -289,7 +303,7 @@
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            z-index: 1000;
+            z-index: 9999;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -298,10 +312,10 @@
         .video-container {
             position: relative;
             width: 90%;
-            max-width: 420px;
-            height: 65vh;
+            max-width: 400px;
+            height: 60vh;
             background: #000000;
-            border-radius: 24px;
+            border-radius: 20px;
             overflow: hidden;
             border: 1px solid var(--glass-border);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -315,49 +329,51 @@
 
         #local-video {
             position: absolute;
-            bottom: 15px;
-            right: 15px;
-            width: 110px;
-            height: 150px;
+            bottom: 12px;
+            right: 12px;
+            width: 100px;
+            height: 140px;
             object-fit: cover;
-            border-radius: 14px;
-            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            border: 2px solid #ffffff;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
         }
 
         .call-controls { 
-            margin-top: 24px; 
+            margin-top: 20px; 
             display: flex; 
-            gap: 20px; 
+            gap: 15px; 
         }
 
         .btn-end { 
             background: #ef4444 !important; 
-            padding: 12px 24px !important;
-            border-radius: 30px !important;
+            padding: 10px 20px !important;
+            border-radius: 25px !important;
         }
 
         .btn-accept { 
             background: #22c55e !important; 
-            padding: 8px 16px !important;
+            padding: 6px 14px !important;
             border-radius: 20px !important;
         }
 
-        /* Incoming Call Box */
+        /* ==========================================
+           7. INCOMING CALL NOTIFICATION
+           ========================================== */
         #incoming-call-box {
             display: none;
             position: fixed;
-            top: 80px;
+            top: 70px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(15, 23, 42, 0.95);
             border: 1px solid var(--accent-color);
-            padding: 14px 22px;
-            border-radius: 35px;
-            z-index: 100;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            padding: 10px 18px;
+            border-radius: 30px;
+            z-index: 10000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
         #incoming-text {
@@ -368,53 +384,70 @@
 </head>
 <body class="theme-blue">
 
+    <!-- Header Section -->
     <header>
         <div class="header-left">
             <div id="status">🔴 Partner is Offline</div>
         </div>
         <div class="header-actions">
-            <button class="call-btn" onclick="startCall(false)" title="Audio Call">📞</button>
-            <button class="call-btn" onclick="startCall(true)" title="Video Call">📹</button>
+            <button type="button" class="call-btn" id="audio-call-btn" title="Audio Call">📞</button>
+            <button type="button" class="call-btn" id="video-call-btn" title="Video Call">📹</button>
             <div class="theme-switcher">
-                <button class="theme-btn btn-blue" onclick="setTheme('blue')">Blue</button>
-                <button class="theme-btn btn-pink" onclick="setTheme('pink')">Pink</button>
+                <button type="button" class="theme-btn btn-blue" onclick="setTheme('blue')">Blue</button>
+                <button type="button" class="theme-btn btn-pink" onclick="setTheme('pink')">Pink</button>
             </div>
         </div>
     </header>
 
-    <!-- Incoming Call Banner -->
+    <!-- Incoming Call Banner Overlay -->
     <div id="incoming-call-box">
         <span id="incoming-text">Incoming Call...</span>
-        <button class="btn-accept" onclick="acceptCall()">Answer</button>
-        <button class="btn-end" onclick="rejectCall()">Reject</button>
+        <button type="button" class="btn-accept" id="accept-call-btn">Answer</button>
+        <button type="button" class="btn-end" id="reject-call-btn">Reject</button>
     </div>
 
-    <!-- Active Call UI Modal -->
+    <!-- Active WebRTC Video Call Screen -->
     <div id="call-modal">
         <div class="video-container">
             <video id="remote-video" autoplay playsinline></video>
             <video id="local-video" autoplay playsinline muted></video>
         </div>
         <div class="call-controls">
-            <button class="btn-end" onclick="endCall()">End Call 🔴</button>
+            <button type="button" class="btn-end" id="end-call-btn">End Call 🔴</button>
         </div>
     </div>
 
+    <!-- Main Messages Scroll Container -->
     <div id="chat-box"></div>
 
+    <!-- Footer Input Bar -->
     <div id="input-area">
         <label for="file-input" class="btn">📎</label>
-        <input type="file" id="file-input" accept="image/*,video/*" onchange="sendFile()">
-        <input type="text" id="msg-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendText()">
-        <button onclick="sendText()">Send</button>
+        <input type="file" id="file-input" accept="image/*,video/*">
+        <input type="text" id="msg-input" placeholder="Type a message...">
+        <button type="button" id="send-btn">Send</button>
     </div>
 
+    <!-- Socket.io Library -->
     <script src="/socket.io/socket.io.js"></script>
+    
     <script>
-        const socket = io();
+        /* ==========================================
+           8. JAVASCRIPT INITIALIZATION
+           ========================================== */
+        const socket = typeof io !== 'undefined' ? io() : null;
+        
         const chatBox = document.getElementById('chat-box');
         const statusDiv = document.getElementById('status');
         const msgInput = document.getElementById('msg-input');
+        const sendBtn = document.getElementById('send-btn');
+        const fileInput = document.getElementById('file-input');
+        
+        const audioCallBtn = document.getElementById('audio-call-btn');
+        const videoCallBtn = document.getElementById('video-call-btn');
+        const acceptCallBtn = document.getElementById('accept-call-btn');
+        const rejectCallBtn = document.getElementById('reject-call-btn');
+        const endCallBtn = document.getElementById('end-call-btn');
 
         let localStream = null;
         let peerConnection = null;
@@ -427,22 +460,9 @@
             ]
         };
 
-        // Mobile Keyboard Viewport Adjustment Fix
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => {
-                document.body.style.height = `${window.visualViewport.height}px`;
-                chatBox.scrollTop = chatBox.scrollHeight;
-            });
-        }
-
-        msgInput.addEventListener('focus', () => {
-            setTimeout(() => {
-                msgInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }, 300);
-        });
-
-        // Theme Toggle Logic
+        /* ==========================================
+           9. THEME MANAGEMENT
+           ========================================== */
         function setTheme(themeName) {
             document.body.className = `theme-${themeName}`;
             localStorage.setItem('chat-theme', themeName);
@@ -453,184 +473,144 @@
             setTheme(savedTheme);
         }
 
-        // Socket Events
-        socket.on('status-change', (data) => {
-            if (statusDiv) {
-                statusDiv.innerText = data.text;
+        /* ==========================================
+           10. MOBILE KEYBOARD & VISUAL VIEWPORT FIX
+           ========================================== */
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                document.body.style.height = `${window.visualViewport.height}px`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        }
+
+        msgInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 300);
+        });
+
+        /* ==========================================
+           11. EVENT LISTENERS
+           ========================================== */
+        sendBtn.addEventListener('click', sendText);
+
+        msgInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendText();
             }
         });
 
-        socket.on('room-full', (msg) => {
-            alert(msg);
-        });
+        fileInput.addEventListener('change', sendFile);
 
-        socket.on('message', (data) => {
-            renderMessage(data, false);
-        });
+        audioCallBtn.addEventListener('click', () => startCall(false));
+        videoCallBtn.addEventListener('click', () => startCall(true));
+        acceptCallBtn.addEventListener('click', acceptCall);
+        rejectCallBtn.addEventListener('click', rejectCall);
+        endCallBtn.addEventListener('click', endCall);
 
-        // Call Signaling Events
-        socket.on('incoming-call', async (data) => {
-            incomingOffer = data.offer;
-            const textElement = document.getElementById('incoming-text');
-            if (textElement) {
-                textElement.innerText = data.isVideo ? "Incoming Video Call..." : "Incoming Voice Call...";
-            }
-            document.getElementById('incoming-call-box').style.display = 'flex';
-        });
-
-        socket.on('call-answered', async (data) => {
-            if (peerConnection) {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-            }
-        });
-
-        socket.on('ice-candidate', async (data) => {
-            if (peerConnection && data.candidate) {
-                try {
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-                } catch (e) {
-                    console.error("Error adding ice candidate:", e);
+        /* ==========================================
+           12. SOCKET.IO EVENT HANDLERS
+           ========================================== */
+        if (socket) {
+            socket.on('status-change', (data) => {
+                if (statusDiv) {
+                    statusDiv.innerText = data.text;
                 }
-            }
-        });
+            });
 
-        socket.on('call-ended', () => {
-            closeCallUI();
-        });
+            socket.on('room-full', (msg) => {
+                alert(msg);
+            });
 
-        // WebRTC Calling Logic
-        async function startCall(isVideo) {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
-                document.getElementById('local-video').srcObject = localStream;
-                document.getElementById('call-modal').style.display = 'flex';
+            socket.on('message', (data) => {
+                renderMessage(data, false);
+            });
 
-                createPeerConnection();
-
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-
-                socket.emit('call-user', { offer, isVideo });
-            } catch (err) {
-                console.error(err);
-                alert("Camera/Microphone permission denied or not available!");
-            }
-        }
-
-        async function acceptCall() {
-            document.getElementById('incoming-call-box').style.display = 'none';
-            document.getElementById('call-modal').style.display = 'flex';
-
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('local-video').srcObject = localStream;
-
-                createPeerConnection();
-
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(incomingOffer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                socket.emit('answer-call', { answer });
-            } catch (err) {
-                console.error(err);
-                alert("Could not access media devices.");
-                endCall();
-            }
-        }
-
-        function rejectCall() {
-            document.getElementById('incoming-call-box').style.display = 'none';
-            socket.emit('end-call');
-        }
-
-        function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(rtcConfig);
-
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
-            }
-
-            peerConnection.ontrack = (event) => {
-                const remoteVideo = document.getElementById('remote-video');
-                if (remoteVideo) {
-                    remoteVideo.srcObject = event.streams[0];
+            socket.on('incoming-call', async (data) => {
+                incomingOffer = data.offer;
+                const incomingText = document.getElementById('incoming-text');
+                if (incomingText) {
+                    incomingText.innerText = data.isVideo ? "Incoming Video Call..." : "Incoming Voice Call...";
                 }
+                document.getElementById('incoming-call-box').style.display = 'flex';
+            });
+
+            socket.on('call-answered', async (data) => {
+                if (peerConnection) {
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                }
+            });
+
+            socket.on('ice-candidate', async (data) => {
+                if (peerConnection && data.candidate) {
+                    try {
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } catch (e) {
+                        console.error("Ice candidate error:", e);
+                    }
+                }
+            });
+
+            socket.on('call-ended', () => {
+                closeCallUI();
+            });
+        }
+
+        /* ==========================================
+           13. MESSAGE SENDING & RENDERING LOGIC
+           ========================================== */
+        function sendText() {
+            const text = msgInput.value.trim();
+            if (!text) return;
+
+            const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const payload = { type: 'text', content: text, timestamp: timeString };
+
+            if (socket) {
+                socket.emit('chat-message', payload);
+            }
+            renderMessage(payload, true);
+            msgInput.value = '';
+            msgInput.focus();
+        }
+
+        function sendFile() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            if (file.size > 9 * 1024 * 1024) {
+                alert("File size 9MB se kam honi chahiye!");
+                fileInput.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const isImage = file.type.startsWith('image/');
+                const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                const payload = {
+                    type: isImage ? 'image' : 'video',
+                    content: e.target.result,
+                    timestamp: timeString
+                };
+                
+                if (socket) {
+                    socket.emit('chat-message', payload);
+                }
+                renderMessage(payload, true);
+                fileInput.value = '';
             };
-
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socket.emit('ice-candidate', event.candidate);
-                }
-            };
+            reader.readAsDataURL(file);
         }
 
-        function endCall() {
-            socket.emit('end-call');
-            closeCallUI();
-        }
-
-        function closeCallUI() {
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            document.getElementById('call-modal').style.display = 'none';
-            document.getElementById('incoming-call-box').style.display = 'none';
-        }
-
-        // Render Chat & Media Messages
         function renderMessage(data, isSent) {
             const div = document.createElement('div');
             div.className = `msg ${isSent ? 'sent' : ''}`;
             
             let contentHtml = '';
             if (data.type === 'image') {
-                contentHtml = `<img src="${data.content}" class="chat-media" alt="Shared image" />`;
+                contentHtml = `<img src="${data.content}" class="chat-media" alt="Shared media" />`;
             } else if (data.type === 'video') {
-                contentHtml = `<video src="${data.content}" controls class="chat-media"></video>`;
-            } else {
-                contentHtml = `<p>${escapeHtml(data.content)}</p>`;
-            }
-
-            const formattedTime = data.timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            div.innerHTML = `${contentHtml}<span class="time">${formattedTime}</span>`;
-            
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            const mediaElement = div.querySelector('.chat-media');
-            if (mediaElement) {
-                addLongPressToDelete(mediaElement, div);
-            }
-        }
-
-        // Long Press Delete Option
-        function addLongPressToDelete(element, parentMsgDiv) {
-            let timer = null;
-
-            const startPress = () => {
-                timer = setTimeout(() => {
-                    if (confirm("Kya aap is photo/video ko remove karna chahte hain?")) {
-                        parentMsgDiv.remove();
-                    }
-                }, 800);
-            };
-
-            const cancelPress = () => {
-                if (timer) clearTimeout(timer);
-            };
-
-            element.addEventListener('touchstart', startPress);
-            element.addEventListener('touchend', cancelPress);
-            element.addEventListener('touchmove', cancelPress);
-
-            element.addEventListener('mousedown', startPress);
-            element.addEventListener('mouseup', cancelPress);
-   
+                contentHtml = `<video src="${data.content}" controls class="chat-medi
