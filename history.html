@@ -2,99 +2,244 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>History Vault</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Purple Blur - Secure History Vault</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-        body { background: #121212; color: #fff; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        h2 { margin-bottom: 15px; text-align: center; }
-        .login-box { background: #1f1f1f; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 10px; }
-        input { padding: 10px; border-radius: 5px; border: none; background: #333; color: #fff; }
-        button { padding: 10px; background: #28a745; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #vault-content { display: none; margin-top: 20px; }
-        .section { background: #1f1f1f; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .section h3 { margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; color: #007bff; }
-        .item { background: #2a2a2a; padding: 10px; border-radius: 6px; margin-bottom: 8px; word-break: break-word; }
-        .item img, .item video { max-width: 100%; border-radius: 6px; margin-top: 5px; display: block; }
-        .time { font-size: 0.75rem; color: #aaa; margin-top: 4px; display: block; }
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #0f172a 100%);
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --glass-card: rgba(255, 255, 255, 0.08);
+            --accent-color: #a855f7;
+            --text-color: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg-gradient); color: var(--text-color); min-height: 100vh; display: flex; flex-direction: column; padding: 16px; }
+
+        /* Login Screen Overlay */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .auth-box {
+            background: var(--glass-card); border: 1px solid var(--glass-border);
+            padding: 24px; border-radius: 20px; width: 90%; max-width: 350px;
+            display: flex; flex-direction: column; gap: 14px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(14px);
+        }
+        .auth-box h2 { color: #e9d5ff; font-size: 1.3rem; margin-bottom: 4px; }
+        .auth-input {
+            width: 100%; padding: 12px 16px; border-radius: 24px; border: 1px solid var(--glass-border);
+            background: rgba(0, 0, 0, 0.4); color: white; outline: none; font-size: 0.95rem;
+        }
+        .auth-btn {
+            background: var(--accent-color); color: white; border: none; padding: 12px;
+            border-radius: 24px; font-weight: 600; cursor: pointer; font-size: 0.95rem;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+        #error-msg { color: #fca5a5; font-size: 0.8rem; display: none; }
+
+        /* Main History Dashboard */
+        #dashboard { display: none; flex: 1; flex-direction: column; }
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding-bottom: 12px; border-bottom: 1px solid var(--glass-border); margin-bottom: 16px; 
+        }
+        h1 { font-size: 1.25rem; color: #e9d5ff; }
+        a.back-btn { 
+            color: white; background: var(--glass-bg); border: 1px solid var(--glass-border); 
+            padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 0.85rem; 
+        }
+
+        /* Filter Tabs Options */
+        .filter-tabs {
+            display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px;
+            scrollbar-width: none;
+        }
+        .filter-tabs::-webkit-scrollbar { display: none; }
+        
+        .tab-btn {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); color: #d8b4fe;
+            padding: 8px 14px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
+        }
+        .tab-btn.active {
+            background: var(--accent-color); color: white; border-color: transparent;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+
+        #history-container { flex: 1; display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
+
+        .history-card {
+            background: var(--glass-card); backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px 16px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: rgba(255,255,255,0.6); }
+        .card-body { font-size: 0.95rem; word-break: break-word; }
+        .media-preview { max-width: 100%; max-height: 200px; border-radius: 10px; object-fit: contain; cursor: pointer; margin-top: 4px; display: block; }
+
+        .clear-container { text-align: center; margin-top: 10px; }
+        .clear-btn { 
+            background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); 
+            color: #fca5a5; padding: 10px 20px; border-radius: 24px; cursor: pointer; font-size: 0.9rem; 
+        }
+        .empty-state { text-align: center; color: rgba(255,255,255,0.4); margin-top: 40px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>🔒 History Vault</h2>
-
-    <div id="login-form" class="login-box">
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="fetchHistory()">Access Vault</button>
-    </div>
-
-    <div id="vault-content">
-        <div class="section">
-            <h3>💬 Messages & Media Logs</h3>
-            <div id="chat-list"></div>
-        </div>
-
-        <div class="section">
-            <h3>📞 Call Logs</h3>
-            <div id="call-list"></div>
+    <!-- Login Authentication Overlay -->
+    <div id="auth-overlay">
+        <div class="auth-box">
+            <h2>🔒 Vault Login</h2>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Enter credentials to view history</p>
+            <input type="text" id="username" class="auth-input" placeholder="Username">
+            <input type="password" id="password" class="auth-input" placeholder="Password">
+            <div id="error-msg">Galat Username ya Password!</div>
+            <button class="auth-btn" onclick="verifyLogin()">Login</button>
+            <a href="/" style="color: #c084fc; font-size: 0.85rem; text-decoration: none; margin-top: 4px;">⬅ Back to Chat</a>
         </div>
     </div>
-</div>
 
-<script>
-async function fetchHistory() {
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
+    <!-- Main Protected Dashboard -->
+    <div id="dashboard">
+        <header>
+            <h1>📜 Activity History</h1>
+            <a href="/" class="back-btn">⬅ Chat</a>
+        </header>
 
-    try {
-        const response = await fetch('/api/history', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user, password: pass })
-        });
+        <!-- Options / Filter Tabs -->
+        <div class="filter-tabs">
+            <button class="tab-btn active" onclick="filterHistory('all', this)">All</button>
+            <button class="tab-btn" onclick="filterHistory('chat', this)">💬 Chats</button>
+            <button class="tab-btn" onclick="filterHistory('call', this)">📞 Calls</button>
+            <button class="tab-btn" onclick="filterHistory('image', this)">🖼️ Photos</button>
+            <button class="tab-btn" onclick="filterHistory('video', this)">🎥 Videos</button>
+        </div>
 
-        const data = await response.json();
+        <div id="history-container"></div>
 
-        if (data.success) {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('vault-content').style.display = 'block';
+        <div class="clear-container">
+            <button class="clear-btn" onclick="clearHistory()">Clear Server History 🗑️</button>
+        </div>
+    </div>
 
-            const chatList = document.getElementById('chat-list');
-            const callList = document.getElementById('call-list');
+    <script>
+        let serverData = { chats: [], calls: [] };
+        let currentFilter = 'all';
 
-            chatList.innerHTML = data.chats.length ? '' : '<p>No messages yet.</p>';
-            data.chats.forEach(item => {
-                let mediaHtml = '';
-                if (item.type === 'image') {
-                    mediaHtml = `<img src="${item.content}" />`;
-                } else if (item.type === 'video') {
-                    mediaHtml = `<video src="${item.content}" controls></video>`;
+        async function verifyLogin() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const errorDiv = document.getElementById('error-msg');
+
+            try {
+                const response = await fetch('/api/history', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    serverData.chats = result.chats || [];
+                    serverData.calls = result.calls || [];
+                    
+                    document.getElementById('auth-overlay').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'flex';
+                    loadHistory('all');
                 } else {
-                    mediaHtml = `<p>${escapeHtml(item.content)}</p>`;
+                    errorDiv.innerText = result.message || "Invalid Credentials";
+                    errorDiv.style.display = 'block';
                 }
-                chatList.innerHTML += `<div class="item">${mediaHtml}<span class="time">${item.timestamp}</span></div>`;
-            });
-
-            callList.innerHTML = data.calls.length ? '' : '<p>No call logs yet.</p>';
-            data.calls.forEach(item => {
-                callList.innerHTML += `<div class="item"><p>${item.event}</p><span class="time">${item.timestamp}</span></div>`;
-            });
-
-        } else {
-            alert(data.message);
+            } catch (err) {
+                errorDiv.innerText = "Server connection error!";
+                errorDiv.style.display = 'block';
+            }
         }
-    } catch (err) {
-        alert("Server error, please try again.");
-    }
-}
 
-function escapeHtml(text) {
-    return text ? text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") : '';
-}
-</script>
+        function loadHistory(filter = 'all') {
+            const container = document.getElementById('history-container');
+            container.innerHTML = '';
 
+            let combinedList = [];
+
+            if (filter === 'all' || filter === 'chat' || filter === 'image' || filter === 'video') {
+                serverData.chats.forEach(item => {
+                    if (filter === 'all' || 
+                        (filter === 'chat' && item.type === 'text') || 
+                        (filter === 'image' && item.type === 'image') || 
+                        (filter === 'video' && item.type === 'video')) {
+                        combinedList.push({ category: 'chat', data: item, time: item.timestamp });
+                    }
+                });
+            }
+
+            if (filter === 'all' || filter === 'call') {
+                serverData.calls.forEach(item => {
+                    combinedList.push({ category: 'call', data: item, time: item.timestamp });
+                });
+            }
+
+            if (combinedList.length === 0) {
+                container.innerHTML = `<div class="empty-state">No records found for "${filter}"</div>`;
+                return;
+            }
+
+            combinedList.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'history-card';
+
+                let icon = '📝';
+                let title = 'Activity';
+                let contentHtml = '';
+
+                if (item.category === 'call') {
+                    icon = '📞';
+                    title = item.data.event;
+                    contentHtml = `<div class="card-body">Call log system event.</div>`;
+                } else if (item.category === 'chat') {
+                    if (item.data.type === 'image') {
+                        icon = '🖼️';
+                        title = 'Photo Shared';
+                        contentHtml = `<img src="${item.data.content}" class="media-preview" onclick="window.open(this.src)" />`;
+                    } else if (item.data.type === 'video') {
+                        icon = '🎥';
+                        title = 'Video Shared';
+                        contentHtml = `<video src="${item.data.content}" class="media-preview" controls></video>`;
+                    } else {
+                        icon = '💬';
+                        title = 'Message';
+                        contentHtml = `<div class="card-body">${item.data.content}</div>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span>${icon} <strong>${title}</strong></span>
+                        <span>${item.time || ''}</span>
+                    </div>
+                    ${contentHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterHistory(type, btnElement) {
+            currentFilter = type;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            loadHistory(type);
+        }
+
+        function clearHistory() {
+            if (confirm("Clear server history logs?")) {
+                serverData = { chats: [], calls: [] };
+                loadHistory(currentFilter);
+            }
+        }
+    </script>
 </body>
 </html>
