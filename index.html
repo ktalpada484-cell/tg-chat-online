@@ -3,217 +3,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Chat & Call History</title>
+    <title>Secure Chat & Vault</title>
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #311042 50%, #0f172a 100%);
-            --glass-bg: rgba(255, 255, 255, 0.06);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --glass-card: rgba(255, 255, 255, 0.1);
-            --accent-color: #a855f7;
-            --text-color: #ffffff;
+            --bg-gradient: linear-gradient(135deg, #09090b 0%, #18181b 50%, #27272a 100%);
+            --glass-bg: rgba(24, 24, 27, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent-primary: #8b5cf6;
+            --accent-hover: #7c3aed;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --danger: #ef4444;
+            --success: #22c55e;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        html, body { height: 100%; width: 100%; overflow: hidden; background: var(--bg-gradient); color: var(--text-color); }
+        html, body { height: 100%; width: 100%; overflow: hidden; background: var(--bg-gradient); color: var(--text-main); }
         body { display: flex; flex-direction: column; }
 
-        /* Login Screen */
-        #login-container {
-            flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px;
-        }
-        .login-box {
-            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); padding: 30px; border-radius: 24px; width: 100%; max-width: 360px;
-            display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-        .login-box h2 { text-align: center; margin-bottom: 5px; font-size: 1.5rem; }
-        .login-box input {
-            padding: 12px 18px; border-radius: 26px; border: 1px solid var(--glass-border);
-            background: rgba(0, 0, 0, 0.3); color: #ffffff; outline: none; font-size: 0.95rem;
-        }
-        .login-box button {
-            background: var(--accent-color); color: white; border: none; padding: 12px 18px;
-            border-radius: 26px; cursor: pointer; font-weight: 600; font-size: 1rem;
-        }
-        #error-msg { color: #ef4444; font-size: 0.85rem; text-align: center; min-height: 20px; }
-
-        /* History Content Screen */
-        #history-container {
-            display: none; flex: 1; flex-direction: column; height: 100%; overflow: hidden;
-        }
+        /* App Header */
         header {
-            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border); padding: 16px; text-align: center;
-            font-size: 1.2rem; font-weight: bold; flex-shrink: 0;
+            background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--glass-border); padding: 14px 20px; display: flex;
+            align-items: center; justify-content: space-between; flex-shrink: 0; z-index: 10;
         }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-icon { font-size: 1.4rem; }
+        .app-title { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; }
+        .status-badge { font-size: 0.75rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 12px; border: 1px solid var(--glass-border); }
 
-        /* Filter Tabs */
-        .tabs {
-            display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; background: rgba(0, 0, 0, 0.2); flex-shrink: 0;
+        .header-actions { display: flex; gap: 10px; }
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: white;
+            width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1rem; transition: background 0.2s;
         }
-        .tab-btn {
-            background: var(--glass-card); border: 1px solid var(--glass-border); color: white;
-            padding: 6px 14px; border-radius: 16px; cursor: pointer; font-size: 0.85rem; white-space: nowrap;
-        }
-        .tab-btn.active { background: var(--accent-color); border-color: var(--accent-color); }
+        .icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
 
-        /* Logs List */
-        #logs-box {
+        /* Chat Area */
+        #chat-container {
             flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+            scroll-behavior: smooth;
         }
-        .log-item {
-            background: var(--glass-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-            border: 1px solid var(--glass-border); padding: 14px 16px; border-radius: 16px;
-            display: flex; flex-direction: column; gap: 6px; word-break: break-word;
+        .message {
+            max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 0.95rem;
+            word-break: break-word; line-height: 1.4; display: flex; flex-direction: column; gap: 4px;
+            animation: fadeIn 0.3s ease;
         }
-        .log-item img, .log-item video { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 6px; }
-        .log-time { font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); text-align: right; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .message.sent { background: var(--accent-primary); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .message.received { background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border); color: white; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .msg-time { font-size: 0.65rem; color: rgba(255, 255, 255, 0.6); align-self: flex-end; margin-top: 2px; }
+        .message img, .message video { max-width: 100%; max-height: 220px; border-radius: 10px; margin-top: 4px; }
+
+        /* Input Bar */
+        .input-bar {
+            background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid var(--glass-border); padding: 12px 16px; display: flex;
+            align-items: center; gap: 10px; flex-shrink: 0;
+        }
+        .input-bar input[type="text"] {
+            flex: 1; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border);
+            padding: 12px 16px; border-radius: 24px; color: white; outline: none; font-size: 0.95rem;
+        }
+        .input-bar input[type="text"]::placeholder { color: var(--text-muted); }
+        .action-icon-btn { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 6px; }
+        .action-icon-btn:hover { color: white; }
+        .send-btn {
+            background: var(--accent-primary); color: white; border: none; width: 42px; height: 42px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 1rem; transition: background 0.2s; flex-shrink: 0;
+        }
+        .send-btn:hover { background: var(--accent-hover); }
+
+        /* Video Call Overlay */
+        #call-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px); z-index: 100; display: none; flex-direction: column; justify-content: space-between; padding: 20px;
+        }
+        .video-grid { flex: 1; display: grid; grid-template-columns: 1fr; gap: 10px; position: relative; overflow: hidden; border-radius: 16px; }
+        video { width: 100%; height: 100%; object-fit: cover; background: #111; border-radius: 16px; }
+        #localVideo { position: absolute; bottom: 20px; right: 20px; width: 100px; height: 140px; border: 2px solid var(--glass-border); z-index: 10; }
+        .call-controls { display: flex; justify-content: center; gap: 20px; padding: 15px; }
+        .call-btn { width: 56px; height: 56px; border-radius: 50%; border: none; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; }
+        .end-call { background: var(--danger); }
+        .accept-call { background: var(--success); }
+
+        /* Modal / Notification Overlays */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+            display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+        }
+        .modal-box {
+            background: #18181b; border: 1px solid var(--glass-border); padding: 24px; border-radius: 20px;
+            width: 100%; max-width: 320px; text-align: center; display: flex; flex-direction: column; gap: 16px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Login View -->
-    <div id="login-container">
-        <div class="login-box">
-            <h2>Vault Login</h2>
-            <input type="text" id="username" placeholder="Username" autocomplete="off">
-            <input type="password" id="password" placeholder="Password">
-            <button id="login-btn" onclick="handleLogin()">Access History</button>
-            <div id="error-msg"></div>
+    <!-- Header -->
+    <header>
+        <div class="logo-area">
+            <span class="logo-icon">🔮</span>
+            <div>
+                <div class="app-title">SecureChat</div>
+                <div id="status" class="status-badge">Connecting...</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="startCall('video')" title="Video Call">🎥</button>
+            <button class="icon-btn" onclick="shareLocation()" title="Share Location">📍</button>
+        </div>
+    </header>
+
+    <!-- Chat Messages Feed -->
+    <div id="chat-container"></div>
+
+    <!-- Message Input Footer -->
+    <div class="input-bar">
+        <label class="action-icon-btn" title="Attach Media">
+            📎 <input type="file" id="media-input" accept="image/*,video/*" style="display: none;" onchange="sendMedia(this)">
+        </label>
+        <input type="text" id="message-input" placeholder="Type a secure message..." autocomplete="off">
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <!-- Incoming/Active Call UI -->
+    <div id="call-overlay">
+        <div style="text-align: center; font-size: 1.1font; font-weight: 600; padding-top: 10px;" id="call-status-text">Secure Call</div>
+        <div class="video-grid">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay playsinline muted></video>
+        </div>
+        <div class="call-controls">
+            <button class="call-btn end-call" onclick="endCall()" title="End Call">📞</button>
+            <button id="accept-btn" class="call-btn accept-call" onclick="acceptCall()" style="display:none;" title="Accept Call">✔️</button>
         </div>
     </div>
 
-    <!-- History View -->
-    <div id="history-container">
-        <header>📜 Secret History Vault</header>
-        
-        <div class="tabs">
-            <button class="tab-btn active" onclick="filterLogs('all', this)">All</button>
-            <button class="tab-btn" onclick="filterLogs('text', this)">Chats</button>
-            <button class="tab-btn" onclick="filterLogs('call', this)">Calls</button>
-            <button class="tab-btn" onclick="filterLogs('image', this)">Photos</button>
-            <button class="tab-btn" onclick="filterLogs('video', this)">Videos</button>
-            <button class="tab-btn" onclick="filterLogs('location', this)">Locations</button>
-        </div>
-
-        <div id="logs-box"></div>
-    </div>
-
+    <!-- Socket.io Client Script -->
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        let allData = { chats: [], calls: [], locations: [] };
-        let currentFilter = 'all';
+        const socket = io();
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const statusBadge = document.getElementById('status');
 
-        // Enter key dabane par bhi login ho jaye
-        document.getElementById('password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                handleLogin();
+        let localStream, remoteStream, peerConnection;
+        const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+        // Enter key message send support
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        socket.on('status-change', (data) => {
+            statusBadge.innerText = data.text;
+        });
+
+        // Send Text Message
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            const msgData = { type: 'text', content: text };
+            socket.emit('chat-message', msgData);
+            appendMessage(msgData, 'sent');
+            messageInput.value = '';
+        }
+
+        // Send Photo/Video Media
+        function sendMedia(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const type = file.type.startsWith('video') ? 'video' : 'image';
+                const msgData = { type: type, content: e.target.result };
+                socket.emit('chat-message', msgData);
+                appendMessage(msgData, 'sent');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Receive Message
+        socket.on('message', (msgData) => {
+            appendMessage(msgData, 'received');
+        });
+
+        function appendMessage(data, senderClass) {
+            const div = document.createElement('div');
+            div.className = `message ${senderClass}`;
+
+            let inner = '';
+            if (data.type === 'image') {
+                inner = `<img src="${data.content}" alt="Image" />`;
+            } else if (data.type === 'video') {
+                inner = `<video src="${data.content}" controls></video>`;
+            } else {
+                inner = `<span>${data.content}</span>`;
+            }
+
+            div.innerHTML = `${inner}<span class="msg-time">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>`;
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Location Sharing
+        function shareLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    socket.emit('save-location', { lat, lng });
+                    
+                    const mapMsg = {
+                        type: 'text',
+                        content: `📍 Location Shared: <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:#c084fc; text-decoration:underline;">Open Map</a>`
+                    };
+                    appendMessage(mapMsg, 'sent');
+                }, () => {
+                    alert('Unable to retrieve your location.');
+                });
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        // WebRTC Calling System Setup
+        async function startCall(type) {
+            document.getElementById('call-overlay').style.display = 'flex';
+            document.getElementById('call-status-text').innerText = "Calling...";
+            
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('localVideo').srcObject = localStream;
+
+                peerConnection = new RTCPeerConnection(iceServers);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                peerConnection.ontrack = (event) => {
+                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                };
+
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('ice-candidate', event.candidate);
+                    }
+                };
+
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                socket.emit('call-user', offer);
+            } catch (err) {
+                console.error("Media access error:", err);
+                alert("Camera/Mic access denied or unavailable.");
+                endCall();
+            }
+        }
+
+        socket.on('incoming-call', async (offer) => {
+            document.getElementById('call-overlay').style.display = 'flex';
+            document.getElementById('call-status-text').innerText = "Incoming Call...";
+            document.getElementById('accept-btn').style.display = 'block';
+            window.incomingOffer = offer;
+        });
+
+        async function acceptCall() {
+            document.getElementById('accept-btn').style.display = 'none';
+            document.getElementById('call-status-text').innerText = "Connected";
+            socket.emit('answer-call');
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                document.getElementById('localVideo').srcObject = localStream;
+
+                peerConnection = new RTCPeerConnection(iceServers);
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+                peerConnection.ontrack = (event) => {
+                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                };
+
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        socket.emit('ice-candidate', event.candidate);
+                    }
+                };
+
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(window.incomingOffer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                socket.emit('answer-call-ans', answer); // handled if needed
+            } catch (err) {
+                console.error("Error answering call:", err);
+            }
+        }
+
+        socket.on('call-answered', async (answer) => {
+            if (peerConnection && answer) {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            }
+            document.getElementById('call-status-text').innerText = "Connected";
+        });
+
+        socket.on('ice-candidate', async (candidate) => {
+            if (peerConnection) {
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (e) {
+                    console.error('Error adding received ice candidate', e);
+                }
             }
         });
 
-        async function handleLogin() {
-            const user = document.getElementById('username').value.trim();
-            const pass = document.getElementById('password').value.trim();
-            const errorMsg = document.getElementById('error-msg');
-            const loginBtn = document.getElementById('login-btn');
+        socket.on('call-ended', () => {
+            cleanupCall();
+        });
 
-            errorMsg.innerText = "";
-
-            if (!user || !pass) {
-                errorMsg.innerText = "Please enter username and password!";
-                return;
-            }
-
-            loginBtn.innerText = "Checking...";
-            loginBtn.disabled = true;
-
-            try {
-                const response = await fetch('/api/history', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: user, password: pass })
-                });
-
-                const result = await response.json();
-
-                if (response.ok && result.success) {
-                    allData.chats = result.chats || [];
-                    allData.calls = result.calls || [];
-                    allData.locations = result.locations || [];
-
-                    document.getElementById('login-container').style.display = 'none';
-                    document.getElementById('history-container').style.display = 'flex';
-                    renderLogs();
-                } else {
-                    errorMsg.innerText = result.message || "Galat Username ya Password!";
-                    loginBtn.innerText = "Access History";
-                    loginBtn.disabled = false;
-                }
-            } catch (err) {
-                console.error(err);
-                errorMsg.innerText = "Server connection error!";
-                loginBtn.innerText = "Access History";
-                loginBtn.disabled = false;
-            }
+        function endCall() {
+            socket.emit('end-call');
+            cleanupCall();
         }
 
-        function filterLogs(type, btn) {
-            currentFilter = type;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderLogs();
-        }
-
-        function renderLogs() {
-            const box = document.getElementById('logs-box');
-            box.innerHTML = '';
-
-            let combined = [];
-
-            if (currentFilter === 'all' || currentFilter === 'text' || currentFilter === 'image' || currentFilter === 'video') {
-                let filteredChats = allData.chats;
-                if (currentFilter !== 'all') {
-                    filteredChats = allData.chats.filter(c => c.type === currentFilter);
-                }
-                combined = combined.concat(filteredChats.map(c => ({ ...c, category: 'chat' })));
+        function cleanupCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
             }
-
-            if (currentFilter === 'all' || currentFilter === 'call') {
-                combined = combined.concat(allData.calls.map(c => ({ ...c, type: 'call', category: 'call' })));
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
             }
-
-            if (currentFilter === 'all' || currentFilter === 'location') {
-                combined = combined.concat(allData.locations.map(c => ({ ...c, type: 'location', category: 'location' })));
-            }
-
-            if (combined.length === 0) {
-                box.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); margin-top: 40px;">No records found.</div>';
-                return;
-            }
-
-            // Render items
-            combined.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'log-item';
-
-                let contentHtml = '';
-                if (item.category === 'call') {
-                    contentHtml = `<strong>📞 Call Log:</strong> ${item.event}`;
-                } else if (item.category === 'location') {
-                    contentHtml = `<strong>📍 Visitor Location:</strong> ${item.event}<br><a href="${item.mapLink}" target="_blank" style="color:#a855f7; text-decoration:underline; display:inline-block; margin-top:5px;">Open in Google Maps 🗺️</a>`;
-                } else {
-                    if (item.type === 'image') {
-                        contentHtml = `<strong>📷 Photo Message:</strong><br><img src="${item.content}" alt="Image" />`;
-                    } else if (item.type === 'video') {
-                        contentHtml = `<strong>🎥 Video Message:</strong><br><video src="${item.content}" controls></video>`;
-                    } else {
-                        contentHtml = `<strong>💬 Chat:</strong> ${item.content}`;
-                    }
-                }
-
-                div.innerHTML = `${contentHtml}<span class="log-time">${item.timestamp}</span>`;
-                box.appendChild(div);
-            });
+            document.getElementById('call-overlay').style.display = 'none';
+            document.getElementById('accept-btn').style.display = 'none';
         }
     </script>
 </body>
