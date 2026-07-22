@@ -28,11 +28,12 @@ let dbData = { chatHistory: [], callLogs: [], locationLogs: [] };
 function loadData() {
     if (fs.existsSync(DATA_FILE)) {
         try {
-            const rawData = fs.readFileSync(DATA_FILE);
-            dbData = JSON.parse(rawData);
-            cleanupOldData(); // Check and remove data older than 30 days
+            const rawData = fs.readFileSync(DATA_FILE, 'utf8');
+            if (rawData.trim() !== '') {
+                dbData = JSON.parse(rawData);
+            }
         } catch (e) {
-            dbData = { chatHistory: [], callLogs: [], locationLogs: [] };
+            console.error("Error reading history.json:", e);
         }
     }
 }
@@ -43,17 +44,6 @@ function saveData() {
     } catch (e) {
         console.error("Error saving data:", e);
     }
-}
-
-// 30 Days Auto-Delete Logic
-function cleanupOldData() {
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    
-    dbData.chatHistory = dbData.chatHistory.filter(item => new Date(item.rawTimestamp || item.timestamp).getTime() > thirtyDaysAgo);
-    dbData.callLogs = dbData.callLogs.filter(item => new Date(item.rawTimestamp || item.timestamp).getTime() > thirtyDaysAgo);
-    dbData.locationLogs = dbData.locationLogs.filter(item => new Date(item.rawTimestamp || item.timestamp).getTime() > thirtyDaysAgo);
-    
-    saveData();
 }
 
 // Load existing data on startup
@@ -72,7 +62,7 @@ app.get('/history.html', (req, res) => {
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
-        loadData(); // Fresh data load karo
+        loadData(); // Fresh data load karo request ke waqt
         return res.json({ 
             success: true, 
             chats: dbData.chatHistory, 
@@ -98,6 +88,7 @@ io.on('connection', (socket) => {
     socket.emit('status-change', { online: activeUsers > 1, text: activeUsers > 1 ? '🟢 Partner is Online' : '🔴 Partner is Offline' });
 
     socket.on('save-location', (data) => {
+        loadData(); // Ensure latest data
         dbData.locationLogs.push({
             event: `Location: Lat ${data.lat}, Lng ${data.lng}`,
             mapLink: `https://www.google.com/maps?q=${data.lat},${data.lng}`,
@@ -108,6 +99,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat-message', (data) => {
+        loadData(); // Ensure latest data
         const msgData = {
             type: data.type || 'text',
             content: data.content,
@@ -120,6 +112,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('call-user', (data) => {
+        loadData();
         const log = { event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
         dbData.callLogs.push(log);
         saveData();
@@ -127,6 +120,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('answer-call', (data) => {
+        loadData();
         const log = { event: 'Call Connected', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
         dbData.callLogs.push(log);
         saveData();
@@ -138,6 +132,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('end-call', () => {
+        loadData();
         const log = { event: 'Call Ended', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
         dbData.callLogs.push(log);
         saveData();
@@ -154,3 +149,4 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+            
