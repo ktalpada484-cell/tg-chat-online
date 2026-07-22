@@ -219,6 +219,23 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
+        // Call Listeners Added Here
+        socket.on('incoming-call', (data) => {
+            document.getElementById('call-overlay').style.display = 'flex';
+            document.getElementById('call-status-text').innerText = 'Incoming Secure Call...';
+            document.getElementById('accept-btn').style.display = 'flex';
+        });
+
+        socket.on('call-answered', () => {
+            document.getElementById('call-status-text').innerText = 'Call Connected';
+            document.getElementById('accept-btn').style.display = 'none';
+        });
+
+        socket.on('call-ended', () => {
+            document.getElementById('call-overlay').style.display = 'none';
+            document.getElementById('accept-btn').style.display = 'none';
+        });
+
         function closeLocationPopup() {
             document.getElementById('location-modal').style.display = 'none';
         }
