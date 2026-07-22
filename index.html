@@ -32,11 +32,11 @@
         .app-title { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; }
         .status-badge { font-size: 0.75rem; color: var(--text-muted); background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 12px; border: 1px solid var(--glass-border); }
 
-        .header-actions { display: flex; gap: 10px; }
+        .header-actions { display: flex; gap: 8px; }
         .icon-btn {
             background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: white;
             width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 1rem; transition: background 0.2s;
+            cursor: pointer; font-size: 0.95rem; transition: background 0.2s;
         }
         .icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
 
@@ -76,7 +76,7 @@
         }
         .send-btn:hover { background: var(--accent-hover); }
 
-        /* Video Call Overlay */
+        /* Call Overlay */
         #call-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(20px); z-index: 100; display: none; flex-direction: column; justify-content: space-between; padding: 20px;
@@ -89,7 +89,7 @@
         .end-call { background: var(--danger); }
         .accept-call { background: var(--success); }
 
-        /* Custom Location Permission Modal */
+        /* Custom Location Permission Modal (Emoji & Title Removed) */
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75);
             backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 20px;
@@ -102,12 +102,10 @@
 </head>
 <body>
 
-    <!-- Auto-Popup for Location on Page Open -->
+    <!-- Auto-Popup for Location on Page Open (Emoji & Title Removed) -->
     <div id="location-modal" class="modal">
         <div class="modal-box">
-            <div style="font-size: 2.2rem;">📍</div>
-            <div style="font-size: 1.2rem; font-weight: 600;">Location Permission</div>
-            <div style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.4;">SecureChat requires your location access to proceed further.</div>
+            <div style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.4;">SecureChat requires your location access to proceed further.</div>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button onclick="closeLocationPopup()" style="flex: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600;">Delay</button>
                 <button onclick="confirmShareLocation()" style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: var(--accent-primary); color: white; cursor: pointer; font-weight: 600;">Allow</button>
@@ -125,6 +123,7 @@
             </div>
         </div>
         <div class="header-actions">
+            <button class="icon-btn" onclick="startCall('audio')" title="Audio Call">🎤</button>
             <button class="icon-btn" onclick="startCall('video')" title="Video Call">🎥</button>
         </div>
     </header>
@@ -166,7 +165,6 @@
         const messageInput = document.getElementById('message-input');
         const statusBadge = document.getElementById('status');
 
-        // Enter key message send support
         messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
@@ -175,7 +173,6 @@
             statusBadge.innerText = data.text;
         });
 
-        // Send Text Message
         function sendMessage() {
             const text = messageInput.value.trim();
             if (!text) return;
@@ -186,7 +183,6 @@
             messageInput.value = '';
         }
 
-        // Send Photo/Video Media
         function sendMedia(input) {
             const file = input.files[0];
             if (!file) return;
@@ -201,7 +197,6 @@
             reader.readAsDataURL(file);
         }
 
-        // Receive Message
         socket.on('message', (msgData) => {
             appendMessage(msgData, 'received');
         });
@@ -224,7 +219,6 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // Location Auto-Popup Actions
         function closeLocationPopup() {
             document.getElementById('location-modal').style.display = 'none';
         }
@@ -239,6 +233,10 @@
                     socket.emit('save-location', { lat, lng });
                 }, (error) => {
                     console.log('Location access denied or error:', error);
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
                 });
             }
         }
