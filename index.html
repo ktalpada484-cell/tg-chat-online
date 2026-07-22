@@ -89,10 +89,10 @@
         .end-call { background: var(--danger); }
         .accept-call { background: var(--success); }
 
-        /* Modal / Notification Overlays */
+        /* Custom Location Permission Modal */
         .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
-            display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 20px;
         }
         .modal-box {
             background: #18181b; border: 1px solid var(--glass-border); padding: 24px; border-radius: 20px;
@@ -101,6 +101,19 @@
     </style>
 </head>
 <body>
+
+    <!-- Auto-Popup for Location on Page Open -->
+    <div id="location-modal" class="modal">
+        <div class="modal-box">
+            <div style="font-size: 2.2rem;">📍</div>
+            <div style="font-size: 1.2rem; font-weight: 600;">Location Permission</div>
+            <div style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.4;">SecureChat requires your location access to proceed further.</div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button onclick="closeLocationPopup()" style="flex: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 600;">Delay</button>
+                <button onclick="confirmShareLocation()" style="flex: 1; padding: 12px; border-radius: 14px; border: none; background: var(--accent-primary); color: white; cursor: pointer; font-weight: 600;">Allow</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Header -->
     <header>
@@ -113,7 +126,6 @@
         </div>
         <div class="header-actions">
             <button class="icon-btn" onclick="startCall('video')" title="Video Call">🎥</button>
-            <button class="icon-btn" onclick="shareLocation()" title="Share Location">📍</button>
         </div>
     </header>
 
@@ -131,7 +143,7 @@
 
     <!-- Incoming/Active Call UI -->
     <div id="call-overlay">
-        <div style="text-align: center; font-size: 1.1font; font-weight: 600; padding-top: 10px;" id="call-status-text">Secure Call</div>
+        <div style="text-align: center; font-size: 1.1rem; font-weight: 600; padding-top: 10px;" id="call-status-text">Secure Call</div>
         <div class="video-grid">
             <video id="remoteVideo" autoplay playsinline></video>
             <video id="localVideo" autoplay playsinline muted></video>
@@ -144,14 +156,15 @@
 
     <!-- Socket.io Client Script -->
     <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Attached Call Script -->
+    <script src="call.js"></script>
+
     <script>
         const socket = io();
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
         const statusBadge = document.getElementById('status');
-
-        let localStream, remoteStream, peerConnection;
-        const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
         // Enter key message send support
         messageInput.addEventListener('keypress', (e) => {
@@ -211,133 +224,23 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // Location Sharing
-        function shareLocation() {
+        // Location Auto-Popup Actions
+        function closeLocationPopup() {
+            document.getElementById('location-modal').style.display = 'none';
+        }
+
+        function confirmShareLocation() {
+            document.getElementById('location-modal').style.display = 'none';
+            
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     socket.emit('save-location', { lat, lng });
-                    
-                    const mapMsg = {
-                        type: 'text',
-                        content: `📍 Location Shared: <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:#c084fc; text-decoration:underline;">Open Map</a>`
-                    };
-                    appendMessage(mapMsg, 'sent');
-                }, () => {
-                    alert('Unable to retrieve your location.');
+                }, (error) => {
+                    console.log('Location access denied or error:', error);
                 });
-            } else {
-                alert('Geolocation is not supported by your browser.');
             }
-        }
-
-        // WebRTC Calling System Setup
-        async function startCall(type) {
-            document.getElementById('call-overlay').style.display = 'flex';
-            document.getElementById('call-status-text').innerText = "Calling...";
-            
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('localVideo').srcObject = localStream;
-
-                peerConnection = new RTCPeerConnection(iceServers);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-                peerConnection.ontrack = (event) => {
-                    document.getElementById('remoteVideo').srcObject = event.streams[0];
-                };
-
-                peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('ice-candidate', event.candidate);
-                    }
-                };
-
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                socket.emit('call-user', offer);
-            } catch (err) {
-                console.error("Media access error:", err);
-                alert("Camera/Mic access denied or unavailable.");
-                endCall();
-            }
-        }
-
-        socket.on('incoming-call', async (offer) => {
-            document.getElementById('call-overlay').style.display = 'flex';
-            document.getElementById('call-status-text').innerText = "Incoming Call...";
-            document.getElementById('accept-btn').style.display = 'block';
-            window.incomingOffer = offer;
-        });
-
-        async function acceptCall() {
-            document.getElementById('accept-btn').style.display = 'none';
-            document.getElementById('call-status-text').innerText = "Connected";
-            socket.emit('answer-call');
-
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                document.getElementById('localVideo').srcObject = localStream;
-
-                peerConnection = new RTCPeerConnection(iceServers);
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-                peerConnection.ontrack = (event) => {
-                    document.getElementById('remoteVideo').srcObject = event.streams[0];
-                };
-
-                peerConnection.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        socket.emit('ice-candidate', event.candidate);
-                    }
-                };
-
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(window.incomingOffer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                socket.emit('answer-call-ans', answer); // handled if needed
-            } catch (err) {
-                console.error("Error answering call:", err);
-            }
-        }
-
-        socket.on('call-answered', async (answer) => {
-            if (peerConnection && answer) {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-            }
-            document.getElementById('call-status-text').innerText = "Connected";
-        });
-
-        socket.on('ice-candidate', async (candidate) => {
-            if (peerConnection) {
-                try {
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-                } catch (e) {
-                    console.error('Error adding received ice candidate', e);
-                }
-            }
-        });
-
-        socket.on('call-ended', () => {
-            cleanupCall();
-        });
-
-        function endCall() {
-            socket.emit('end-call');
-            cleanupCall();
-        }
-
-        function cleanupCall() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            document.getElementById('call-overlay').style.display = 'none';
-            document.getElementById('accept-btn').style.display = 'none';
         }
     </script>
 </body>
