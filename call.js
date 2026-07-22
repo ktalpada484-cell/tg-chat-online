@@ -6,39 +6,28 @@ const iceServers = {
     ]
 };
 
+// 1. Call Start Karna
 async function startCall(type) {
     const overlay = document.getElementById('call-overlay');
     const statusText = document.getElementById('call-status-text');
     overlay.style.display = 'flex';
-    statusText.innerText = "Connecting Call...";
+    statusText.innerText = "Calling...";
 
-    // Check if audio-only or video call
     const useVideo = (type === 'video');
 
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: useVideo, audio: true });
-        const localVideo = document.getElementById('localVideo');
-        localVideo.srcObject = localStream;
-        await localVideo.play().catch(e => console.log("Local play error:", e));
+        document.getElementById('localVideo').srcObject = localStream;
 
         peerConnection = new RTCPeerConnection(iceServers);
 
-        // Add local tracks to peer connection
         localStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStream);
         });
 
         peerConnection.ontrack = (event) => {
-            console.log("Remote stream received");
-            const remoteVideo = document.getElementById('remoteVideo');
-            if (event.streams && event.streams[0]) {
-                remoteVideo.srcObject = event.streams[0];
-            } else {
-                remoteStream = remoteStream || new MediaStream();
-                remoteStream.addTrack(event.track);
-                remoteVideo.srcObject = remoteStream;
-            }
-            remoteVideo.play().catch(e => console.log("Remote play error:", e));
+            console.log("Remote track received");
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
             statusText.innerText = "Connected";
         };
 
@@ -53,32 +42,31 @@ async function startCall(type) {
         socket.emit('call-user', { offer, type });
 
     } catch (err) {
-        console.error("Media access error:", err);
-        alert("Camera/Mic access denied or unavailable.");
+        console.error("Media error:", err);
+        alert("Camera/Mic permission error!");
         endCall();
     }
 }
 
-// Incoming Call Listener
-socket.on('incoming-call', async (data) => {
+// 2. Incoming Call Listen Karna
+socket.on('incoming-call', (data) => {
     document.getElementById('call-overlay').style.display = 'flex';
-    document.getElementById('call-status-text').innerText = "Incoming Call...";
-    document.getElementById('accept-btn').style.display = 'flex'; // Fix style to flex/block as per your CSS
+    document.getElementById('call-status-text').innerText = `Incoming ${data.type.toUpperCase()} Call...`;
+    document.getElementById('accept-btn').style.display = 'flex';
     window.incomingOffer = data.offer;
-    window.callType = data.type || 'video';
+    window.callType = data.type;
 });
 
+// 3. Call Accept Karna
 async function acceptCall() {
     document.getElementById('accept-btn').style.display = 'none';
     document.getElementById('call-status-text').innerText = "Connecting...";
-    
+
     const useVideo = (window.callType === 'video');
 
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ video: useVideo, audio: true });
-        const localVideo = document.getElementById('localVideo');
-        localVideo.srcObject = localStream;
-        await localVideo.play().catch(e => console.log("Local play error:", e));
+        document.getElementById('localVideo').srcObject = localStream;
 
         peerConnection = new RTCPeerConnection(iceServers);
 
@@ -87,16 +75,8 @@ async function acceptCall() {
         });
 
         peerConnection.ontrack = (event) => {
-            console.log("Remote stream received on accept");
-            const remoteVideo = document.getElementById('remoteVideo');
-            if (event.streams && event.streams[0]) {
-                remoteVideo.srcObject = event.streams[0];
-            } else {
-                remoteStream = remoteStream || new MediaStream();
-                remoteStream.addTrack(event.track);
-                remoteVideo.srcObject = remoteStream;
-            }
-            remoteVideo.play().catch(e => console.log("Remote play error:", e));
+            console.log("Remote track received on accept");
+            document.getElementById('remoteVideo').srcObject = event.streams[0];
             document.getElementById('call-status-text').innerText = "Connected";
         };
 
@@ -109,37 +89,40 @@ async function acceptCall() {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(window.incomingOffer));
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-        
+
         socket.emit('answer-call', answer);
         document.getElementById('call-status-text').innerText = "Connected";
 
     } catch (err) {
-        console.error("Error answering call:", err);
+        console.error("Accept error:", err);
         endCall();
     }
 }
 
+// 4. Answer Receive Karna (Caller side)
 socket.on('call-answered', async (answer) => {
-    if (peerConnection && answer) {
-        try {
+    try {
+        if (peerConnection) {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
             document.getElementById('call-status-text').innerText = "Connected";
-        } catch (e) {
-            console.error("Error setting remote description:", e);
         }
+    } catch (e) {
+        console.error("Answer set error:", e);
     }
 });
 
+// 5. ICE Candidates Handle Karna
 socket.on('ice-candidate', async (candidate) => {
-    if (peerConnection && candidate) {
-        try {
+    try {
+        if (peerConnection && candidate) {
             await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        } catch (e) {
-            console.error('Error adding received ice candidate', e);
         }
+    } catch (e) {
+        console.error("ICE error:", e);
     }
 });
 
+// 6. Call Cut / End Karna
 socket.on('call-ended', () => {
     cleanupCall();
 });
@@ -157,11 +140,8 @@ function cleanupCall() {
         peerConnection.close();
         peerConnection = null;
     }
-    const remoteVideo = document.getElementById('remoteVideo');
-    const localVideo = document.getElementById('localVideo');
-    if (remoteVideo) remoteVideo.srcObject = null;
-    if (localVideo) localVideo.srcObject = null;
-
+    document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('localVideo').srcObject = null;
     document.getElementById('call-overlay').style.display = 'none';
     document.getElementById('accept-btn').style.display = 'none';
-                }
+}
