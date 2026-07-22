@@ -12,8 +12,11 @@ async function startCall(type) {
     overlay.style.display = 'flex';
     statusText.innerText = "Connecting Call...";
 
+    // Check if audio-only or video call
+    const useVideo = (type === 'video');
+
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localStream = await navigator.mediaDevices.getUserMedia({ video: useVideo, audio: true });
         const localVideo = document.getElementById('localVideo');
         localVideo.srcObject = localStream;
         await localVideo.play().catch(e => console.log("Local play error:", e));
@@ -47,7 +50,7 @@ async function startCall(type) {
 
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
-        socket.emit('call-user', offer);
+        socket.emit('call-user', { offer, type });
 
     } catch (err) {
         console.error("Media access error:", err);
@@ -57,20 +60,22 @@ async function startCall(type) {
 }
 
 // Incoming Call Listener
-socket.on('incoming-call', async (offer) => {
+socket.on('incoming-call', async (data) => {
     document.getElementById('call-overlay').style.display = 'flex';
     document.getElementById('call-status-text').innerText = "Incoming Call...";
-    document.getElementById('accept-btn').style.display = 'block';
-    window.incomingOffer = offer;
+    document.getElementById('accept-btn').style.display = 'flex'; // Fix style to flex/block as per your CSS
+    window.incomingOffer = data.offer;
+    window.callType = data.type || 'video';
 });
 
 async function acceptCall() {
     document.getElementById('accept-btn').style.display = 'none';
     document.getElementById('call-status-text').innerText = "Connecting...";
-    socket.emit('answer-call');
+    
+    const useVideo = (window.callType === 'video');
 
     try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localStream = await navigator.mediaDevices.getUserMedia({ video: useVideo, audio: true });
         const localVideo = document.getElementById('localVideo');
         localVideo.srcObject = localStream;
         await localVideo.play().catch(e => console.log("Local play error:", e));
@@ -104,7 +109,9 @@ async function acceptCall() {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(window.incomingOffer));
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
-        socket.emit('answer-call-ans', answer);
+        
+        socket.emit('answer-call', answer);
+        document.getElementById('call-status-text').innerText = "Connected";
 
     } catch (err) {
         console.error("Error answering call:", err);
@@ -124,7 +131,7 @@ socket.on('call-answered', async (answer) => {
 });
 
 socket.on('ice-candidate', async (candidate) => {
-    if (peerConnection) {
+    if (peerConnection && candidate) {
         try {
             await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (e) {
@@ -144,7 +151,7 @@ function endCall() {
 
 function cleanupCall() {
     if (localStream) {
-        localStream.getTracks().history ? '' : localStream.getTracks().forEach(track => track.stop());
+        localStream.getTracks().forEach(track => track.stop());
     }
     if (peerConnection) {
         peerConnection.close();
@@ -157,5 +164,4 @@ function cleanupCall() {
 
     document.getElementById('call-overlay').style.display = 'none';
     document.getElementById('accept-btn').style.display = 'none';
-}
-
+                }
