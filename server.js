@@ -19,10 +19,7 @@ app.use(express.static(__dirname));
 const ADMIN_USER = "sumit@1123";
 const ADMIN_PASS = "sumit1123";
 
-// Data file path
 const DATA_FILE = path.join(__dirname, 'history.json');
-
-// Load data or initialize empty arrays
 let dbData = { chatHistory: [], callLogs: [], locationLogs: [] };
 
 function loadData() {
@@ -46,7 +43,6 @@ function saveData() {
     }
 }
 
-// Load existing data on startup
 loadData();
 
 let activeUsers = 0;
@@ -62,7 +58,7 @@ app.get('/history.html', (req, res) => {
 app.post('/api/history', (req, res) => {
     const { username, password } = req.body;
     if (username === ADMIN_USER && password === ADMIN_PASS) {
-        loadData(); // Fresh data load karo request ke waqt
+        loadData();
         return res.json({ 
             success: true, 
             chats: dbData.chatHistory, 
@@ -88,7 +84,7 @@ io.on('connection', (socket) => {
     socket.emit('status-change', { online: activeUsers > 1, text: activeUsers > 1 ? '🟢 Partner is Online' : '🔴 Partner is Offline' });
 
     socket.on('save-location', (data) => {
-        loadData(); // Ensure latest data
+        loadData();
         dbData.locationLogs.push({
             event: `Location: Lat ${data.lat}, Lng ${data.lng}`,
             mapLink: `https://www.google.com/maps?q=${data.lat},${data.lng}`,
@@ -99,7 +95,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat-message', (data) => {
-        loadData(); // Ensure latest data
+        loadData();
         const msgData = {
             type: data.type || 'text',
             content: data.content,
@@ -113,16 +109,14 @@ io.on('connection', (socket) => {
 
     socket.on('call-user', (data) => {
         loadData();
-        const log = { event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
-        dbData.callLogs.push(log);
+        dbData.callLogs.push({ event: 'Outgoing Call Initiated', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() });
         saveData();
         socket.broadcast.emit('incoming-call', data);
     });
 
     socket.on('answer-call', (data) => {
         loadData();
-        const log = { event: 'Call Connected', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
-        dbData.callLogs.push(log);
+        dbData.callLogs.push({ event: 'Call Connected', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() });
         saveData();
         socket.broadcast.emit('call-answered', data);
     });
@@ -133,8 +127,7 @@ io.on('connection', (socket) => {
 
     socket.on('end-call', () => {
         loadData();
-        const log = { event: 'Call Ended', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() };
-        dbData.callLogs.push(log);
+        dbData.callLogs.push({ event: 'Call Ended', timestamp: new Date().toLocaleTimeString(), rawTimestamp: new Date().toISOString() });
         saveData();
         socket.broadcast.emit('call-ended');
     });
