@@ -65,10 +65,18 @@
         .log-item {
             background: var(--glass-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
             border: 1px solid var(--glass-border); padding: 14px 16px; border-radius: 16px;
-            display: flex; flex-direction: column; gap: 6px; word-break: break-word;
+            display: flex; flex-direction: column; gap: 8px; word-break: break-word;
         }
-        .log-item img, .log-item video { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 6px; }
+        .log-item img, .log-item video { max-width: 100%; max-height: 200px; border-radius: 10px; margin-top: 4px; display: block; }
         .log-time { font-size: 0.7rem; color: rgba(255, 255, 255, 0.6); text-align: right; }
+        
+        /* Download Button Styling */
+        .download-btn {
+            display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 14px;
+            background: var(--accent-color); color: white; text-decoration: none; border-radius: 12px;
+            font-size: 0.8rem; font-weight: 600; width: fit-content; transition: opacity 0.2s;
+        }
+        .download-btn:hover { opacity: 0.85; }
     </style>
 </head>
 <body>
@@ -179,12 +187,20 @@
                 if (item.category === 'call') {
                     contentHtml = `<strong>📞 Call Log:</strong> ${item.event}`;
                 } else if (item.category === 'location') {
-                    contentHtml = `<strong>📍 Visitor Location:</strong> ${item.event}<br><a href="${item.mapLink}" target="_blank" style="color:#a855f7; text-decoration:underline; display:inline-block; margin-top:5px;">Open in Google Maps 🗺️</a>`;
+                    contentHtml = `<strong>📍 Visitor Location:</strong> ${item.event}<br><a href="${item.mapLink}" target="_blank" style="color:#c084fc; text-decoration:underline; display:inline-block; margin-top:5px;">Open in Google Maps 🗺️</a>`;
                 } else {
                     if (item.type === 'image') {
-                        contentHtml = `<strong>📷 Photo Message:</strong><br><img src="${item.content}" alt="Image" />`;
+                        contentHtml = `
+                            <strong>📷 Photo Message:</strong>
+                            <img src="${item.content}" alt="Photo" />
+                            <a href="${item.content}" download="vault-photo.jpg" class="download-btn">📥 Download Photo</a>
+                        `;
                     } else if (item.type === 'video') {
-                        contentHtml = `<strong>🎥 Video Message:</strong><br><video src="${item.content}" controls></video>`;
+                        contentHtml = `
+                            <strong>🎥 Video Message:</strong>
+                            <video src="${item.content}" controls></video>
+                            <a href="${item.content}" download="vault-video.mp4" class="download-btn">📥 Download Video</a>
+                        `;
                     } else {
                         contentHtml = `<strong>💬 Chat:</strong> ${item.content}`;
                     }
